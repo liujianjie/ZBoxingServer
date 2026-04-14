@@ -11,6 +11,19 @@ namespace ET.Server
             self.PlayerIdToUsername.Clear();
             self.OnlineSessions.Clear();
             self.NextPlayerId = 10001;
+            self.IsDirty = false;
+
+            // 从文件加载已有账户数据
+            self.LoadAccounts();
+        }
+
+        [EntitySystem]
+        private static void Destroy(this ZBAccountComponent self)
+        {
+            // 关闭时保存未持久化的数据
+            self.IsDirty = true; // 强制保存
+            self.SaveAccounts();
+            Log.Info("[ZBoxing] 账户组件销毁，数据已保存");
         }
 
         /// <summary>
@@ -52,6 +65,10 @@ namespace ET.Server
 
             self.Accounts[username] = account;
             self.PlayerIdToUsername[account.PlayerId] = username;
+
+            // 注册后自动持久化
+            self.MarkDirty();
+            self.SaveAccounts();
 
             return ZBErrorCode.Success;
         }
@@ -128,6 +145,52 @@ namespace ET.Server
             brief.WinCount = info.WinCount;
             brief.LoseCount = info.LoseCount;
             return brief;
+        }
+
+        /// <summary>
+        /// 更新玩家战绩（战斗结算后调用）
+        /// </summary>
+        public static void UpdatePlayerStats(this ZBAccountComponent self, long playerId, bool isWin, int goldDelta)
+        {
+            if (!self.PlayerIdToUsername.TryGetValue(playerId, out string username))
+            {
+                return;
+            }
+
+            if (!self.Accounts.TryGetValue(username, out ZBAccountInfo account))
+            {
+                return;
+            }
+
+            if (isWin)
+            {
+                account.WinCount++;
+            }
+            else
+            {
+                account.LoseCount++;
+            }
+
+            account.Gold += goldDelta;
+            if (account.Gold < 0) account.Gold = 0;
+
+            // 战绩变更后持久化
+            self.MarkDirty();
+            self.SaveAccounts();
+        }
+
+        /// <summary>
+        /// 根据玩家ID获取账户信息
+        /// </summary>
+        public static ZBAccountInfo GetAccountByPlayerId(this ZBAccountComponent self, long playerId)
+        {
+            if (!self.PlayerIdToUsername.TryGetValue(playerId, out string username))
+            {
+                return null;
+            }
+
+            self.Accounts.TryGetValue(username, out ZBAccountInfo account);
+            return account;
         }
     }
 }

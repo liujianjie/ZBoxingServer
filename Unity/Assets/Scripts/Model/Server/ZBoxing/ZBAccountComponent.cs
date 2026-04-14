@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace ET.Server
 {
     /// <summary>
-    /// 账户信息（内存存储，Demo用）
+    /// 账户信息
     /// </summary>
     [EnableClass]
     public class ZBAccountInfo
@@ -18,11 +18,22 @@ namespace ET.Server
     }
 
     /// <summary>
+    /// 持久化存档数据结构（JSON序列化用）
+    /// </summary>
+    [EnableClass]
+    public class ZBAccountSaveData
+    {
+        public long NextPlayerId { get; set; } = 10001;
+        public List<ZBAccountInfo> AccountList { get; set; } = new();
+    }
+
+    /// <summary>
     /// ZBoxing账户管理组件，挂载在Gate Scene上
     /// 管理所有玩家账户信息和在线状态
+    /// 支持JSON文件持久化，服务端重启不丢数据
     /// </summary>
     [ComponentOf(typeof(Scene))]
-    public class ZBAccountComponent : Entity, IAwake
+    public class ZBAccountComponent : Entity, IAwake, IDestroy
     {
         /// <summary>
         /// 用户名 → 账户信息
@@ -43,6 +54,16 @@ namespace ET.Server
         /// 下一个可分配的玩家ID
         /// </summary>
         public long NextPlayerId = 10001;
+
+        /// <summary>
+        /// 存档文件路径
+        /// </summary>
+        public string SaveFilePath;
+
+        /// <summary>
+        /// 是否有未保存的变更
+        /// </summary>
+        public bool IsDirty;
     }
 
     /// <summary>
