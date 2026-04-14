@@ -32,6 +32,11 @@ namespace ET
                         return Console.In.ReadLine();
                     }, self.CancellationTokenSource.Token);
                     
+                    if (line == null)
+                    {
+                        // 非交互模式下ReadLine返回null，退出控制台循环
+                        break;
+                    }
                     line = line.Trim();
 
                     switch (line)
