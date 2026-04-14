@@ -20,6 +20,10 @@ namespace ET.Server
 
             StartSceneConfig startSceneConfig = StartSceneConfigCategory.Instance.Get((int)root.Id);
             root.AddComponent<NetComponent, IPEndPoint, NetworkProtocol>(startSceneConfig.InnerIPPort, NetworkProtocol.UDP);
+
+            // ZBoxing: TCP直连端口，客户端直接连接（跳过Router）
+            root.AddComponent<ZBDirectTcpComponent, IPEndPoint>(new IPEndPoint(IPAddress.Any, 30100));
+
             await ETTask.CompletedTask;
         }
     }
