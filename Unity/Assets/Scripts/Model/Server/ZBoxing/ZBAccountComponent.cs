@@ -78,5 +78,17 @@ namespace ET.Server
         public const int AlreadyLoggedIn = 4;     // 已在其他地方登录
         public const int UsernameTaken = 5;       // 用户名已被占用
         public const int NicknameTooLong = 6;     // 昵称过长
+
+        // 房间系统错误码 (10~19)
+        public const int NotLoggedIn = 10;        // 未登录
+        public const int AlreadyInRoom = 11;      // 已在房间中
+        public const int RoomNotFound = 12;       // 房间不存在
+        public const int RoomFull = 13;           // 房间已满
+        public const int NotInRoom = 14;          // 不在任何房间
+        public const int NotReady = 15;           // 未准备
+        public const int NotRoomHost = 16;        // 不是房主
+
+        // 服务端内部错误 (99)
+        public const int ServerError = 99;        // 服务端内部异常
     }
 }

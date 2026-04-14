@@ -42,5 +42,21 @@ namespace ET.Server
             self.Username = username;
             self.Nickname = nickname;
         }
+
+        /// <summary>
+        /// 获取玩家ID
+        /// </summary>
+        public static long GetPlayerId(this ZBSessionPlayerComponent self)
+        {
+            return self.PlayerId;
+        }
+
+        /// <summary>
+        /// 获取昵称
+        /// </summary>
+        public static string GetNickname(this ZBSessionPlayerComponent self)
+        {
+            return self.Nickname;
+        }
     }
 }
