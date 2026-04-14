@@ -1,9 +1,9 @@
-using MemoryPack;
+using ProtoBuf;
 
 namespace ET
 {
     [ComponentOf(typeof(LSUnit))]
-    [MemoryPackable]
+    [ProtoContract]
     public partial class LSInputComponent: LSEntity, ILSUpdate, IAwake, ISerializeToEntity
     {
         public LSInput LSInput { get; set; }

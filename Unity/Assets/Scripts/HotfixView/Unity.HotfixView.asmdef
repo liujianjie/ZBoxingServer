@@ -6,7 +6,7 @@
         "Unity.Core",
         "Unity.Mathematics",
         "Unity.Loader",
-        "MemoryPack",
+        "protobuf-net",
         "Unity.Model",
         "Unity.Hotfix",
         "Unity.ModelView",

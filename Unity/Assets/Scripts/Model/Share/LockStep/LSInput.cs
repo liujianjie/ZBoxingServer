@@ -1,15 +1,15 @@
 using System;
-using MemoryPack;
+using ProtoBuf;
 
 namespace ET
 {
-    [MemoryPackable]
+    [ProtoContract]
     public partial struct LSInput
     {
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public TrueSync.TSVector2 V;
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Button;
         
         public bool Equals(LSInput other)

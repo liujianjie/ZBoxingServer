@@ -1,18 +1,18 @@
 using System.Collections.Generic;
-using MemoryPack;
+using ProtoBuf;
 
 namespace ET
 {
-    [MemoryPackable]
+    [ProtoContract]
     public partial class Replay: Object
     {
-        [MemoryPackOrder(1)]
+        [ProtoMember(1)]
         public List<LockStepUnitInfo> UnitInfos;
-        
-        [MemoryPackOrder(2)]
+
+        [ProtoMember(2)]
         public List<OneFrameInputs> FrameInputs = new();
-        
-        [MemoryPackOrder(3)]
+
+        [ProtoMember(3)]
         public List<byte[]> Snapshots = new();
     }
 }

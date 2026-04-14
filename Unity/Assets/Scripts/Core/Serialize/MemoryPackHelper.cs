@@ -1,6 +1,8 @@
+// 序列化辅助类，内部实现从MemoryPack改为protobuf-net，保留类名避免修改调用方
 using System;
 using System.ComponentModel;
-using MemoryPack;
+using System.IO;
+using ProtoBuf;
 
 namespace ET
 {
@@ -12,7 +14,9 @@ namespace ET
             {
                 supportInitialize.BeginInit();
             }
-            return MemoryPackSerializer.Serialize(message.GetType(), message);
+            using var ms = new MemoryStream();
+            Serializer.NonGeneric.Serialize(ms, message);
+            return ms.ToArray();
         }
 
         public static void Serialize(object message, MemoryBuffer stream)
@@ -21,12 +25,13 @@ namespace ET
             {
                 supportInitialize.BeginInit();
             }
-            MemoryPackSerializer.Serialize(message.GetType(), stream, message);
+            Serializer.NonGeneric.Serialize(stream, message);
         }
-        
+
         public static object Deserialize(Type type, byte[] bytes, int index, int count)
         {
-            object o = MemoryPackSerializer.Deserialize(type, bytes.AsSpan(index, count));
+            using var ms = new MemoryStream(bytes, index, count);
+            object o = Serializer.NonGeneric.Deserialize(type, ms);
             if (o is ISupportInitialize supportInitialize)
             {
                 supportInitialize.EndInit();
@@ -34,9 +39,11 @@ namespace ET
             return o;
         }
 
+        // 使用Merge填充已有对象，支持ET的对象池机制
         public static object Deserialize(Type type, byte[] bytes, int index, int count, ref object o)
         {
-            MemoryPackSerializer.Deserialize(type, bytes.AsSpan(index, count), ref o);
+            using var ms = new MemoryStream(bytes, index, count);
+            o = Serializer.NonGeneric.Merge(ms, o);
             if (o is ISupportInitialize supportInitialize)
             {
                 supportInitialize.EndInit();
@@ -46,7 +53,7 @@ namespace ET
 
         public static object Deserialize(Type type, MemoryBuffer stream)
         {
-            object o = MemoryPackSerializer.Deserialize(type, stream.GetSpan());
+            object o = Serializer.NonGeneric.Deserialize(type, stream);
             if (o is ISupportInitialize supportInitialize)
             {
                 supportInitialize.EndInit();
@@ -54,9 +61,10 @@ namespace ET
             return o;
         }
 
+        // 使用Merge填充已有对象，支持ET的对象池机制
         public static object Deserialize(Type type, MemoryBuffer stream, ref object o)
         {
-            MemoryPackSerializer.Deserialize(type, stream.GetSpan(), ref o);
+            o = Serializer.NonGeneric.Merge(stream, o);
             if (o is ISupportInitialize supportInitialize)
             {
                 supportInitialize.EndInit();

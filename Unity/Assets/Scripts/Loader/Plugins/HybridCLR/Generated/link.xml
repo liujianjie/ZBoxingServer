@@ -1,24 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <linker>
-  <assembly fullname="MemoryPack">
-    <type fullname="MemoryPack.Formatters.ArrayFormatter`1" preserve="all" />
-    <type fullname="MemoryPack.Formatters.DictionaryFormatter`2" preserve="all" />
-    <type fullname="MemoryPack.Formatters.ListFormatter" preserve="all" />
-    <type fullname="MemoryPack.Formatters.ListFormatter`1" preserve="all" />
-    <type fullname="MemoryPack.GenerateType" preserve="all" />
-    <type fullname="MemoryPack.IMemoryPackFormatterRegister" preserve="all" />
-    <type fullname="MemoryPack.IMemoryPackable`1" preserve="all" />
-    <type fullname="MemoryPack.Internal.PreserveAttribute" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackConstructorAttribute" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackFormatterProvider" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackFormatter`1" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackIgnoreAttribute" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackIncludeAttribute" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackOrderAttribute" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackReader" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackSerializationException" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackWriter" preserve="all" />
-    <type fullname="MemoryPack.MemoryPackableAttribute" preserve="all" />
+  <assembly fullname="protobuf-net">
+    <type fullname="ProtoBuf.ProtoContractAttribute" preserve="all" />
+    <type fullname="ProtoBuf.ProtoMemberAttribute" preserve="all" />
+    <type fullname="ProtoBuf.ProtoIgnoreAttribute" preserve="all" />
+    <type fullname="ProtoBuf.Serializer" preserve="all" />
+    <type fullname="ProtoBuf.Meta.RuntimeTypeModel" preserve="all" />
   </assembly>
   <assembly fullname="MongoDB.Bson">
     <type fullname="MongoDB.Bson.Serialization.Attributes.BsonDictionaryOptionsAttribute" preserve="all" />

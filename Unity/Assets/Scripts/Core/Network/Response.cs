@@ -1,16 +1,16 @@
-using MemoryPack;
+using ProtoBuf;
 
 namespace ET
 {
     [Message(ushort.MaxValue)]
-    [MemoryPackable]
+    [ProtoContract]
     public partial class MessageResponse: MessageObject, IResponse
     {
-        [MemoryPackOrder(1)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
-        [MemoryPackOrder(2)]
+        [ProtoMember(2)]
         public int Error { get; set; }
-        [MemoryPackOrder(3)]
+        [ProtoMember(3)]
         public string Message { get; set; }
     }
 }

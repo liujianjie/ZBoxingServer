@@ -2,7 +2,7 @@
     "name": "Unity.ThirdParty",
     "rootNamespace": "ET",
     "references": [
-        "MemoryPack"
+        "protobuf-net"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

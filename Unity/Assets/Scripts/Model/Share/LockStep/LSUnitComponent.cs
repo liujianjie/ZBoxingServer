@@ -1,9 +1,9 @@
-﻿using MemoryPack;
+using ProtoBuf;
 
 namespace ET
 {
 	[ComponentOf(typeof(LSWorld))]
-	[MemoryPackable]
+	[ProtoContract]
 	public partial class LSUnitComponent: LSEntity, IAwake, ISerializeToEntity
 	{
 	}

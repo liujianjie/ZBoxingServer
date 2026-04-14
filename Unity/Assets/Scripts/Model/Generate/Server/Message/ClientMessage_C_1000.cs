@@ -1,9 +1,9 @@
-using MemoryPack;
+using ProtoBuf;
 using System.Collections.Generic;
 
 namespace ET
 {
-    [MemoryPackable]
+    [ProtoContract]
     [Message(ClientMessage.Main2NetClient_Login)]
     [ResponseType(nameof(NetClient2Main_Login))]
     public partial class Main2NetClient_Login : MessageObject, IRequest
@@ -13,22 +13,22 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(Main2NetClient_Login), isFromPool) as Main2NetClient_Login;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int OwnerFiberId { get; set; }
 
         /// <summary>
         /// 账号
         /// </summary>
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Account { get; set; }
 
         /// <summary>
         /// 密码
         /// </summary>
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public string Password { get; set; }
 
         public override void Dispose()
@@ -47,7 +47,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(ClientMessage.NetClient2Main_Login)]
     public partial class NetClient2Main_Login : MessageObject, IResponse
     {
@@ -56,16 +56,16 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(NetClient2Main_Login), isFromPool) as NetClient2Main_Login;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public long PlayerId { get; set; }
 
         public override void Dispose()

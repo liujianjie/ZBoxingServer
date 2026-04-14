@@ -1,7 +1,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
-using MemoryPack;
+using ProtoBuf;
 using TrueSync;
 
 namespace ET
@@ -17,7 +17,7 @@ namespace ET
         {
             return entity.LSWorld().GetId();
         }
-        
+
         public static TSRandom GetRandom(this LSEntity entity)
         {
             return entity.LSWorld().Random;
@@ -26,14 +26,13 @@ namespace ET
 
     [EnableMethod]
     [ChildOf]
-    [MemoryPackable]
+    [ProtoContract]
     public partial class LSWorld: Entity, IAwake, IScene
     {
-        [MemoryPackConstructor]
         public LSWorld()
         {
         }
-        
+
         public LSWorld(SceneType sceneType)
         {
             this.Id = this.GetId();
@@ -42,13 +41,13 @@ namespace ET
         }
 
         private readonly LSUpdater updater = new();
-        
+
         [BsonIgnore]
-        [MemoryPackIgnore]
+        [ProtoIgnore]
         public Fiber Fiber { get; set; }
-        
+
         [BsonElement]
-        [MemoryPackInclude]
+        [ProtoMember(1)]
         private long idGenerator;
 
         public long GetId()
@@ -57,11 +56,11 @@ namespace ET
         }
 
         public TSRandom Random { get; set; }
-        
+
         [BsonIgnore]
-        [MemoryPackIgnore]
+        [ProtoIgnore]
         public SceneType SceneType { get; set; }
-        
+
         public int Frame { get; set; }
 
         public void Update()
@@ -74,7 +73,7 @@ namespace ET
         {
             this.updater.Add(entity);
         }
-        
+
         public new K AddComponent<K>(bool isFromPool = false) where K : LSEntity, IAwake, new()
         {
             return this.AddComponentWithId<K>(this.GetId(), isFromPool);
@@ -114,7 +113,7 @@ namespace ET
         {
             return this.AddChildWithId<T, A, B, C>(this.GetId(), a, b, c, isFromPool);
         }
-        
+
         protected override long GetLongHashCode(Type type)
         {
             return LSEntitySystemSingleton.Instance.GetLongHashCode(type);

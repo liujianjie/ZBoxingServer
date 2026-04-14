@@ -5,7 +5,7 @@
         "Unity.ThirdParty",
         "Unity.Core",
         "Unity.Mathematics",
-        "MemoryPack"
+        "protobuf-net"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

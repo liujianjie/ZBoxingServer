@@ -5,7 +5,6 @@ public class AOTGenericReferences : UnityEngine.MonoBehaviour
 	// {{ AOT assemblies
 	public static readonly IReadOnlyList<string> PatchedAOTAssemblyList = new List<string>
 	{
-		"MemoryPack.dll",
 		"MongoDB.Bson.dll",
 		"System.Core.dll",
 		"System.Runtime.CompilerServices.Unsafe.dll",

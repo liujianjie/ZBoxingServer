@@ -1,9 +1,9 @@
-using MemoryPack;
+using ProtoBuf;
 using System.Collections.Generic;
 
 namespace ET
 {
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.HttpGetRouterResponse)]
     public partial class HttpGetRouterResponse : MessageObject
     {
@@ -12,10 +12,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(HttpGetRouterResponse), isFromPool) as HttpGetRouterResponse;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public List<string> Realms { get; set; } = new();
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public List<string> Routers { get; set; } = new();
 
         public override void Dispose()
@@ -32,7 +32,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.RouterSync)]
     public partial class RouterSync : MessageObject
     {
@@ -41,10 +41,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(RouterSync), isFromPool) as RouterSync;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public uint ConnectId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public string Address { get; set; }
 
         public override void Dispose()
@@ -61,7 +61,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2M_TestRequest)]
     [ResponseType(nameof(M2C_TestResponse))]
     public partial class C2M_TestRequest : MessageObject, ILocationRequest
@@ -71,10 +71,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2M_TestRequest), isFromPool) as C2M_TestRequest;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public string request { get; set; }
 
         public override void Dispose()
@@ -91,7 +91,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_TestResponse)]
     public partial class M2C_TestResponse : MessageObject, IResponse
     {
@@ -100,16 +100,16 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_TestResponse), isFromPool) as M2C_TestResponse;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public string response { get; set; }
 
         public override void Dispose()
@@ -128,7 +128,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2G_EnterMap)]
     [ResponseType(nameof(G2C_EnterMap))]
     public partial class C2G_EnterMap : MessageObject, ISessionRequest
@@ -138,7 +138,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2G_EnterMap), isFromPool) as C2G_EnterMap;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
         public override void Dispose()
@@ -154,7 +154,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.G2C_EnterMap)]
     public partial class G2C_EnterMap : MessageObject, ISessionResponse
     {
@@ -163,19 +163,19 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(G2C_EnterMap), isFromPool) as G2C_EnterMap;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
         /// <summary>
         /// 自己的UnitId
         /// </summary>
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public long MyId { get; set; }
 
         public override void Dispose()
@@ -194,7 +194,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.MoveInfo)]
     public partial class MoveInfo : MessageObject
     {
@@ -203,13 +203,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(MoveInfo), isFromPool) as MoveInfo;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public List<Unity.Mathematics.float3> Points { get; set; } = new();
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public Unity.Mathematics.quaternion Rotation { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public int TurnSpeed { get; set; }
 
         public override void Dispose()
@@ -227,7 +227,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.UnitInfo)]
     public partial class UnitInfo : MessageObject
     {
@@ -236,25 +236,25 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(UnitInfo), isFromPool) as UnitInfo;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public long UnitId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int ConfigId { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public int Type { get; set; }
 
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public Unity.Mathematics.float3 Position { get; set; }
 
-        [MemoryPackOrder(4)]
+        [ProtoMember(5)]
         public Unity.Mathematics.float3 Forward { get; set; }
 
         [MongoDB.Bson.Serialization.Attributes.BsonDictionaryOptions(MongoDB.Bson.Serialization.Options.DictionaryRepresentation.ArrayOfArrays)]
-        [MemoryPackOrder(5)]
+        [ProtoMember(6)]
         public Dictionary<int, long> KV { get; set; } = new();
-        [MemoryPackOrder(6)]
+        [ProtoMember(7)]
         public MoveInfo MoveInfo { get; set; }
 
         public override void Dispose()
@@ -276,7 +276,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_CreateUnits)]
     public partial class M2C_CreateUnits : MessageObject, IMessage
     {
@@ -285,7 +285,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_CreateUnits), isFromPool) as M2C_CreateUnits;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public List<UnitInfo> Units { get; set; } = new();
 
         public override void Dispose()
@@ -301,7 +301,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_CreateMyUnit)]
     public partial class M2C_CreateMyUnit : MessageObject, IMessage
     {
@@ -310,7 +310,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_CreateMyUnit), isFromPool) as M2C_CreateMyUnit;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public UnitInfo Unit { get; set; }
 
         public override void Dispose()
@@ -326,7 +326,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_StartSceneChange)]
     public partial class M2C_StartSceneChange : MessageObject, IMessage
     {
@@ -335,10 +335,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_StartSceneChange), isFromPool) as M2C_StartSceneChange;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public long SceneInstanceId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public string SceneName { get; set; }
 
         public override void Dispose()
@@ -355,7 +355,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_RemoveUnits)]
     public partial class M2C_RemoveUnits : MessageObject, IMessage
     {
@@ -364,7 +364,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_RemoveUnits), isFromPool) as M2C_RemoveUnits;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public List<long> Units { get; set; } = new();
 
         public override void Dispose()
@@ -380,7 +380,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2M_PathfindingResult)]
     public partial class C2M_PathfindingResult : MessageObject, ILocationMessage
     {
@@ -389,10 +389,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2M_PathfindingResult), isFromPool) as C2M_PathfindingResult;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public Unity.Mathematics.float3 Position { get; set; }
 
         public override void Dispose()
@@ -409,7 +409,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2M_Stop)]
     public partial class C2M_Stop : MessageObject, ILocationMessage
     {
@@ -418,7 +418,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2M_Stop), isFromPool) as C2M_Stop;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
         public override void Dispose()
@@ -434,7 +434,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_PathfindingResult)]
     public partial class M2C_PathfindingResult : MessageObject, IMessage
     {
@@ -443,13 +443,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_PathfindingResult), isFromPool) as M2C_PathfindingResult;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public long Id { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public Unity.Mathematics.float3 Position { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public List<Unity.Mathematics.float3> Points { get; set; } = new();
 
         public override void Dispose()
@@ -467,7 +467,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_Stop)]
     public partial class M2C_Stop : MessageObject, IMessage
     {
@@ -476,16 +476,16 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_Stop), isFromPool) as M2C_Stop;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public long Id { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public Unity.Mathematics.float3 Position { get; set; }
 
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public Unity.Mathematics.quaternion Rotation { get; set; }
 
         public override void Dispose()
@@ -504,7 +504,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2G_Ping)]
     [ResponseType(nameof(G2C_Ping))]
     public partial class C2G_Ping : MessageObject, ISessionRequest
@@ -514,7 +514,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2G_Ping), isFromPool) as C2G_Ping;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
         public override void Dispose()
@@ -530,7 +530,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.G2C_Ping)]
     public partial class G2C_Ping : MessageObject, ISessionResponse
     {
@@ -539,16 +539,16 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(G2C_Ping), isFromPool) as G2C_Ping;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public long Time { get; set; }
 
         public override void Dispose()
@@ -567,7 +567,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.G2C_Test)]
     public partial class G2C_Test : MessageObject, ISessionMessage
     {
@@ -588,7 +588,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2M_Reload)]
     [ResponseType(nameof(M2C_Reload))]
     public partial class C2M_Reload : MessageObject, ISessionRequest
@@ -598,13 +598,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2M_Reload), isFromPool) as C2M_Reload;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public string Account { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Password { get; set; }
 
         public override void Dispose()
@@ -622,7 +622,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_Reload)]
     public partial class M2C_Reload : MessageObject, ISessionResponse
     {
@@ -631,13 +631,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_Reload), isFromPool) as M2C_Reload;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
         public override void Dispose()
@@ -655,7 +655,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2R_Login)]
     [ResponseType(nameof(R2C_Login))]
     public partial class C2R_Login : MessageObject, ISessionRequest
@@ -665,19 +665,19 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2R_Login), isFromPool) as C2R_Login;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
         /// <summary>
         /// 帐号
         /// </summary>
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public string Account { get; set; }
 
         /// <summary>
         /// 密码
         /// </summary>
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Password { get; set; }
 
         public override void Dispose()
@@ -695,7 +695,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.R2C_Login)]
     public partial class R2C_Login : MessageObject, ISessionResponse
     {
@@ -704,22 +704,22 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(R2C_Login), isFromPool) as R2C_Login;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public string Address { get; set; }
 
-        [MemoryPackOrder(4)]
+        [ProtoMember(5)]
         public long Key { get; set; }
 
-        [MemoryPackOrder(5)]
+        [ProtoMember(6)]
         public long GateId { get; set; }
 
         public override void Dispose()
@@ -740,7 +740,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2G_LoginGate)]
     [ResponseType(nameof(G2C_LoginGate))]
     public partial class C2G_LoginGate : MessageObject, ISessionRequest
@@ -750,16 +750,16 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2G_LoginGate), isFromPool) as C2G_LoginGate;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
         /// <summary>
         /// 帐号
         /// </summary>
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public long Key { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public long GateId { get; set; }
 
         public override void Dispose()
@@ -777,7 +777,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.G2C_LoginGate)]
     public partial class G2C_LoginGate : MessageObject, ISessionResponse
     {
@@ -786,16 +786,16 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(G2C_LoginGate), isFromPool) as G2C_LoginGate;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public long PlayerId { get; set; }
 
         public override void Dispose()
@@ -814,7 +814,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.G2C_TestHotfixMessage)]
     public partial class G2C_TestHotfixMessage : MessageObject, ISessionMessage
     {
@@ -823,7 +823,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(G2C_TestHotfixMessage), isFromPool) as G2C_TestHotfixMessage;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public string Info { get; set; }
 
         public override void Dispose()
@@ -839,7 +839,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2M_TestRobotCase)]
     [ResponseType(nameof(M2C_TestRobotCase))]
     public partial class C2M_TestRobotCase : MessageObject, ILocationRequest
@@ -849,10 +849,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2M_TestRobotCase), isFromPool) as C2M_TestRobotCase;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int N { get; set; }
 
         public override void Dispose()
@@ -869,7 +869,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_TestRobotCase)]
     public partial class M2C_TestRobotCase : MessageObject, ILocationResponse
     {
@@ -878,16 +878,16 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_TestRobotCase), isFromPool) as M2C_TestRobotCase;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
-        [MemoryPackOrder(3)]
+        [ProtoMember(4)]
         public int N { get; set; }
 
         public override void Dispose()
@@ -906,7 +906,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2M_TestRobotCase2)]
     public partial class C2M_TestRobotCase2 : MessageObject, ILocationMessage
     {
@@ -915,10 +915,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2M_TestRobotCase2), isFromPool) as C2M_TestRobotCase2;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int N { get; set; }
 
         public override void Dispose()
@@ -935,7 +935,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_TestRobotCase2)]
     public partial class M2C_TestRobotCase2 : MessageObject, ILocationMessage
     {
@@ -944,10 +944,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_TestRobotCase2), isFromPool) as M2C_TestRobotCase2;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int N { get; set; }
 
         public override void Dispose()
@@ -964,7 +964,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2M_TransferMap)]
     [ResponseType(nameof(M2C_TransferMap))]
     public partial class C2M_TransferMap : MessageObject, ILocationRequest
@@ -974,7 +974,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2M_TransferMap), isFromPool) as C2M_TransferMap;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
         public override void Dispose()
@@ -990,7 +990,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.M2C_TransferMap)]
     public partial class M2C_TransferMap : MessageObject, ILocationResponse
     {
@@ -999,13 +999,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(M2C_TransferMap), isFromPool) as M2C_TransferMap;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
         public override void Dispose()
@@ -1023,7 +1023,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.C2G_Benchmark)]
     [ResponseType(nameof(G2C_Benchmark))]
     public partial class C2G_Benchmark : MessageObject, ISessionRequest
@@ -1033,7 +1033,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2G_Benchmark), isFromPool) as C2G_Benchmark;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
         public override void Dispose()
@@ -1049,7 +1049,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(OuterMessage.G2C_Benchmark)]
     public partial class G2C_Benchmark : MessageObject, ISessionResponse
     {
@@ -1058,13 +1058,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(G2C_Benchmark), isFromPool) as G2C_Benchmark;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
         public override void Dispose()

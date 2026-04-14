@@ -1,9 +1,9 @@
-using MemoryPack;
+using ProtoBuf;
 using System.Collections.Generic;
 
 namespace ET
 {
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.C2G_Match)]
     [ResponseType(nameof(G2C_Match))]
     public partial class C2G_Match : MessageObject, ISessionRequest
@@ -13,7 +13,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2G_Match), isFromPool) as C2G_Match;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
         public override void Dispose()
@@ -29,7 +29,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.G2C_Match)]
     public partial class G2C_Match : MessageObject, ISessionResponse
     {
@@ -38,13 +38,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(G2C_Match), isFromPool) as G2C_Match;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Error { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public string Message { get; set; }
 
         public override void Dispose()
@@ -65,7 +65,7 @@ namespace ET
     /// <summary>
     /// 匹配成功，通知客户端切换场景
     /// </summary>
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.Match2G_NotifyMatchSuccess)]
     public partial class Match2G_NotifyMatchSuccess : MessageObject, IMessage
     {
@@ -74,13 +74,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(Match2G_NotifyMatchSuccess), isFromPool) as Match2G_NotifyMatchSuccess;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int RpcId { get; set; }
 
         /// <summary>
         /// 房间的ActorId
         /// </summary>
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public ActorId ActorId { get; set; }
 
         public override void Dispose()
@@ -100,7 +100,7 @@ namespace ET
     /// <summary>
     /// 客户端通知房间切换场景完成
     /// </summary>
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.C2Room_ChangeSceneFinish)]
     public partial class C2Room_ChangeSceneFinish : MessageObject, IRoomMessage
     {
@@ -109,7 +109,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2Room_ChangeSceneFinish), isFromPool) as C2Room_ChangeSceneFinish;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public long PlayerId { get; set; }
 
         public override void Dispose()
@@ -125,7 +125,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.LockStepUnitInfo)]
     public partial class LockStepUnitInfo : MessageObject
     {
@@ -134,13 +134,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(LockStepUnitInfo), isFromPool) as LockStepUnitInfo;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public long PlayerId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public TrueSync.TSVector Position { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public TrueSync.TSQuaternion Rotation { get; set; }
 
         public override void Dispose()
@@ -161,7 +161,7 @@ namespace ET
     /// <summary>
     /// 房间通知客户端进入战斗
     /// </summary>
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.Room2C_Start)]
     public partial class Room2C_Start : MessageObject, IMessage
     {
@@ -170,10 +170,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(Room2C_Start), isFromPool) as Room2C_Start;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public long StartTime { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public List<LockStepUnitInfo> UnitInfo { get; set; } = new();
 
         public override void Dispose()
@@ -190,7 +190,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.FrameMessage)]
     public partial class FrameMessage : MessageObject, IMessage
     {
@@ -199,13 +199,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(FrameMessage), isFromPool) as FrameMessage;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int Frame { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public long PlayerId { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public LSInput Input { get; set; }
 
         public override void Dispose()
@@ -223,7 +223,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.OneFrameInputs)]
     public partial class OneFrameInputs : MessageObject, IMessage
     {
@@ -233,7 +233,7 @@ namespace ET
         }
 
         [MongoDB.Bson.Serialization.Attributes.BsonDictionaryOptions(MongoDB.Bson.Serialization.Options.DictionaryRepresentation.ArrayOfArrays)]
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public Dictionary<long, LSInput> Inputs { get; set; } = new();
         public override void Dispose()
         {
@@ -248,7 +248,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.Room2C_AdjustUpdateTime)]
     public partial class Room2C_AdjustUpdateTime : MessageObject, IMessage
     {
@@ -257,7 +257,7 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(Room2C_AdjustUpdateTime), isFromPool) as Room2C_AdjustUpdateTime;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int DiffTime { get; set; }
 
         public override void Dispose()
@@ -273,7 +273,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.C2Room_CheckHash)]
     public partial class C2Room_CheckHash : MessageObject, IRoomMessage
     {
@@ -282,13 +282,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(C2Room_CheckHash), isFromPool) as C2Room_CheckHash;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public long PlayerId { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public int Frame { get; set; }
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public long Hash { get; set; }
 
         public override void Dispose()
@@ -306,7 +306,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.Room2C_CheckHashFail)]
     public partial class Room2C_CheckHashFail : MessageObject, IMessage
     {
@@ -315,10 +315,10 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(Room2C_CheckHashFail), isFromPool) as Room2C_CheckHashFail;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public int Frame { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public byte[] LSWorldBytes { get; set; }
 
         public override void Dispose()
@@ -335,7 +335,7 @@ namespace ET
         }
     }
 
-    [MemoryPackable]
+    [ProtoContract]
     [Message(LockStepOuter.G2C_Reconnect)]
     public partial class G2C_Reconnect : MessageObject, IMessage
     {
@@ -344,13 +344,13 @@ namespace ET
             return ObjectPool.Instance.Fetch(typeof(G2C_Reconnect), isFromPool) as G2C_Reconnect;
         }
 
-        [MemoryPackOrder(0)]
+        [ProtoMember(1)]
         public long StartTime { get; set; }
 
-        [MemoryPackOrder(1)]
+        [ProtoMember(2)]
         public List<LockStepUnitInfo> UnitInfos { get; set; } = new();
 
-        [MemoryPackOrder(2)]
+        [ProtoMember(3)]
         public int Frame { get; set; }
 
         public override void Dispose()

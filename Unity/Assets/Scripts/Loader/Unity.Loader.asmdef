@@ -5,7 +5,7 @@
         "Unity.ThirdParty",
         "Unity.Core",
         "HybridCLR.Runtime",
-        "MemoryPack",
+        "protobuf-net",
         "YooAsset",
         "YooAsset.Editor"
     ],
