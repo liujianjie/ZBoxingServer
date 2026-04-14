@@ -311,6 +311,80 @@ namespace ET.Server
         }
 
         /// <summary>
+        /// 设置玩家准备状态
+        /// </summary>
+        public static int SetReady(this ZBRoomManagerComponent self, long playerId, bool ready, out ZBRoomComponent room)
+        {
+            room = self.GetRoomByPlayerId(playerId);
+            if (room == null)
+            {
+                return ZBErrorCode.NotInRoom;
+            }
+
+            // 对战中不允许改变准备状态
+            if (room.State == ZBRoomState.Fighting)
+            {
+                return ZBErrorCode.NotInRoom;
+            }
+
+            if (room.Host != null && room.Host.PlayerId == playerId)
+            {
+                room.Host.IsReady = ready;
+            }
+            else if (room.Guest != null && room.Guest.PlayerId == playerId)
+            {
+                room.Guest.IsReady = ready;
+            }
+            else
+            {
+                return ZBErrorCode.NotInRoom;
+            }
+
+            Log.Info($"[ZBoxing] 玩家准备状态: PlayerId={playerId}, Ready={ready}, RoomId={room.RoomId}");
+
+            return ZBErrorCode.Success;
+        }
+
+        /// <summary>
+        /// 检查房间是否满足开战条件（双方都在且都已准备），满足则触发开战
+        /// </summary>
+        public static bool TryStartBattle(this ZBRoomManagerComponent self, ZBRoomComponent room)
+        {
+            // 必须两人都在房间且都已准备
+            if (room.Host == null || room.Guest == null)
+            {
+                return false;
+            }
+
+            if (!room.Host.IsReady || !room.Guest.IsReady)
+            {
+                return false;
+            }
+
+            // 切换房间状态为对战中
+            room.State = ZBRoomState.Fighting;
+
+            // 向双方推送开战通知
+            var battleStart = G2C_ZBBattleStart.Create();
+            battleStart.RoomId = room.RoomId;
+            battleStart.Countdown = 3; // 3秒倒计时
+
+            if (room.Host.Session != null && !room.Host.Session.IsDisposed)
+            {
+                room.Host.Session.Send(battleStart);
+            }
+
+            if (room.Guest.Session != null && !room.Guest.Session.IsDisposed)
+            {
+                room.Guest.Session.Send(battleStart);
+            }
+
+            Log.Info($"[ZBoxing] 对战开始: RoomId={room.RoomId}, Host={room.Host.Nickname} vs Guest={room.Guest.Nickname}");
+
+            return true;
+        }
+
+        /// <summary>
         /// 玩家断线时清理房间
         /// </summary>
         public static void OnPlayerDisconnect(this ZBRoomManagerComponent self, long playerId, ZBAccountComponent accountComponent)

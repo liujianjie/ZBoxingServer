@@ -756,6 +756,111 @@ namespace ET
         }
     }
 
+    [ProtoContract]
+    [Message(ZBoxingOuter.C2G_ZBMatch)]
+    [ResponseType(nameof(G2C_ZBMatch))]
+    public partial class C2G_ZBMatch : MessageObject, ISessionRequest
+    {
+        public static C2G_ZBMatch Create(bool isFromPool = false)
+        {
+            return ObjectPool.Instance.Fetch(typeof(C2G_ZBMatch), isFromPool) as C2G_ZBMatch;
+        }
+
+        /// <summary>
+        /// false=开始匹配, true=取消匹配
+        /// </summary>
+        [ProtoMember(1)]
+        public bool Cancel { get; set; }
+
+        [ProtoMember(90)]
+        public int RpcId { get; set; }
+
+        public override void Dispose()
+        {
+            if (!this.IsFromPool)
+            {
+                return;
+            }
+
+            this.Cancel = default;
+            this.RpcId = default;
+
+            ObjectPool.Instance.Recycle(this);
+        }
+    }
+
+    [ProtoContract]
+    [Message(ZBoxingOuter.G2C_ZBMatch)]
+    public partial class G2C_ZBMatch : MessageObject, ISessionResponse
+    {
+        public static G2C_ZBMatch Create(bool isFromPool = false)
+        {
+            return ObjectPool.Instance.Fetch(typeof(G2C_ZBMatch), isFromPool) as G2C_ZBMatch;
+        }
+
+        [ProtoMember(1)]
+        public int ErrorCode { get; set; }
+
+        /// <summary>
+        /// 当前是否在队列中
+        /// </summary>
+        [ProtoMember(2)]
+        public bool InQueue { get; set; }
+
+        [ProtoMember(90)]
+        public int RpcId { get; set; }
+
+        [ProtoMember(91)]
+        public int Error { get; set; }
+
+        [ProtoMember(92)]
+        public string Message { get; set; }
+
+        public override void Dispose()
+        {
+            if (!this.IsFromPool)
+            {
+                return;
+            }
+
+            this.ErrorCode = default;
+            this.InQueue = default;
+            this.RpcId = default;
+            this.Error = default;
+            this.Message = default;
+
+            ObjectPool.Instance.Recycle(this);
+        }
+    }
+
+    /// <summary>
+    /// 服务端推送: 匹配成功（自动创建房间）
+    /// </summary>
+    [ProtoContract]
+    [Message(ZBoxingOuter.G2C_ZBMatchFound)]
+    public partial class G2C_ZBMatchFound : MessageObject, ISessionMessage
+    {
+        public static G2C_ZBMatchFound Create(bool isFromPool = false)
+        {
+            return ObjectPool.Instance.Fetch(typeof(G2C_ZBMatchFound), isFromPool) as G2C_ZBMatchFound;
+        }
+
+        [ProtoMember(1)]
+        public ZBRoomInfo Room { get; set; }
+
+        public override void Dispose()
+        {
+            if (!this.IsFromPool)
+            {
+                return;
+            }
+
+            this.Room = default;
+
+            ObjectPool.Instance.Recycle(this);
+        }
+    }
+
     /// <summary>
     /// 服务端推送: 房间状态更新
     /// </summary>
@@ -1035,11 +1140,14 @@ namespace ET
         public const ushort G2C_ZBRoomList = 30019;
         public const ushort C2G_ZBReady = 30020;
         public const ushort G2C_ZBReady = 30021;
-        public const ushort G2C_ZBRoomUpdate = 30022;
-        public const ushort G2C_ZBBattleStart = 30023;
-        public const ushort C2G_ZBBattleInput = 30024;
-        public const ushort G2C_ZBBattleSnapshot = 30025;
-        public const ushort G2C_ZBBattleEvent = 30026;
-        public const ushort G2C_ZBBattleEnd = 30027;
+        public const ushort C2G_ZBMatch = 30022;
+        public const ushort G2C_ZBMatch = 30023;
+        public const ushort G2C_ZBMatchFound = 30024;
+        public const ushort G2C_ZBRoomUpdate = 30025;
+        public const ushort G2C_ZBBattleStart = 30026;
+        public const ushort C2G_ZBBattleInput = 30027;
+        public const ushort G2C_ZBBattleSnapshot = 30028;
+        public const ushort G2C_ZBBattleEvent = 30029;
+        public const ushort G2C_ZBBattleEnd = 30030;
     }
 }

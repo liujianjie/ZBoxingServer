@@ -182,6 +182,28 @@ message G2C_ZBReady // ISessionResponse
 	string Message = 92;
 }
 
+// ResponseType G2C_ZBMatch
+message C2G_ZBMatch // ISessionRequest
+{
+	bool Cancel = 1; // false=开始匹配, true=取消匹配
+	int32 RpcId = 90;
+}
+
+message G2C_ZBMatch // ISessionResponse
+{
+	int32 ErrorCode = 1;
+	bool InQueue = 2; // 当前是否在队列中
+	int32 RpcId = 90;
+	int32 Error = 91;
+	string Message = 92;
+}
+
+/// 服务端推送: 匹配成功（自动创建房间）
+message G2C_ZBMatchFound // ISessionMessage
+{
+	ZBRoomInfo Room = 1;
+}
+
 /// 服务端推送: 房间状态更新
 message G2C_ZBRoomUpdate // ISessionMessage
 {
