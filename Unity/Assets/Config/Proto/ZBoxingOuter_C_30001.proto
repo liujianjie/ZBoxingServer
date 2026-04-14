@@ -1,0 +1,240 @@
+syntax = "proto3";
+package ET;
+
+// ============================================================
+// ZBoxing 共享数据类型
+// ============================================================
+
+message ZBPlayerBrief
+{
+	int64 PlayerId = 1;
+	string Nickname = 2;
+	int32 Gold = 3;
+	int32 WinCount = 4;
+	int32 LoseCount = 5;
+}
+
+message ZBRoomInfo
+{
+	int32 RoomId = 1;
+	string RoomName = 2;
+	ZBPlayerBrief Host = 3;
+	ZBPlayerBrief Guest = 4;
+	bool HostReady = 5;
+	bool GuestReady = 6;
+	int32 State = 7; // 0=等待中, 1=已满, 2=对战中
+}
+
+message ZBPlayerState
+{
+	int64 PlayerId = 1;
+	float PosX = 2;
+	float PosY = 3;
+	int32 Hp = 4;
+	int32 Stamina = 5;
+	int32 AnimState = 6;
+	int32 AnimFrame = 7;
+	bool FacingRight = 8;
+	int32 ComboCount = 9;
+}
+
+// ============================================================
+// 系统协议
+// ============================================================
+
+// ResponseType G2C_ZBHeartbeat
+message C2G_ZBHeartbeat // ISessionRequest
+{
+	int64 ClientTime = 1;
+	int32 RpcId = 90;
+}
+
+message G2C_ZBHeartbeat // ISessionResponse
+{
+	int64 ServerTime = 1;
+	int32 RpcId = 90;
+	int32 Error = 91;
+	string Message = 92;
+}
+
+/// 服务端踢人通知
+message G2C_ZBKick // ISessionMessage
+{
+	int32 Reason = 1; // 1=重复登录, 2=服务器维护
+	string KickMessage = 2;
+}
+
+// ============================================================
+// 认证协议
+// ============================================================
+
+// ResponseType G2C_ZBLogin
+message C2G_ZBLogin // ISessionRequest
+{
+	string Username = 1;
+	string Password = 2;
+	int32 RpcId = 90;
+}
+
+message G2C_ZBLogin // ISessionResponse
+{
+	int32 ErrorCode = 1;
+	ZBPlayerBrief Player = 2;
+	int32 RpcId = 90;
+	int32 Error = 91;
+	string Message = 92;
+}
+
+// ResponseType G2C_ZBRegister
+message C2G_ZBRegister // ISessionRequest
+{
+	string Username = 1;
+	string Password = 2;
+	string Nickname = 3;
+	int32 RpcId = 90;
+}
+
+message G2C_ZBRegister // ISessionResponse
+{
+	int32 ErrorCode = 1;
+	ZBPlayerBrief Player = 2;
+	int32 RpcId = 90;
+	int32 Error = 91;
+	string Message = 92;
+}
+
+// ============================================================
+// 大厅协议
+// ============================================================
+
+// ResponseType G2C_ZBCreateRoom
+message C2G_ZBCreateRoom // ISessionRequest
+{
+	string RoomName = 1;
+	int32 RpcId = 90;
+}
+
+message G2C_ZBCreateRoom // ISessionResponse
+{
+	int32 ErrorCode = 1;
+	ZBRoomInfo Room = 2;
+	int32 RpcId = 90;
+	int32 Error = 91;
+	string Message = 92;
+}
+
+// ResponseType G2C_ZBJoinRoom
+message C2G_ZBJoinRoom // ISessionRequest
+{
+	int32 RoomId = 1;
+	int32 RpcId = 90;
+}
+
+message G2C_ZBJoinRoom // ISessionResponse
+{
+	int32 ErrorCode = 1;
+	ZBRoomInfo Room = 2;
+	int32 RpcId = 90;
+	int32 Error = 91;
+	string Message = 92;
+}
+
+// ResponseType G2C_ZBLeaveRoom
+message C2G_ZBLeaveRoom // ISessionRequest
+{
+	int32 RpcId = 90;
+}
+
+message G2C_ZBLeaveRoom // ISessionResponse
+{
+	int32 ErrorCode = 1;
+	int32 RpcId = 90;
+	int32 Error = 91;
+	string Message = 92;
+}
+
+// ResponseType G2C_ZBRoomList
+message C2G_ZBRoomList // ISessionRequest
+{
+	int32 RpcId = 90;
+}
+
+message G2C_ZBRoomList // ISessionResponse
+{
+	repeated ZBRoomInfo Rooms = 1;
+	int32 RpcId = 90;
+	int32 Error = 91;
+	string Message = 92;
+}
+
+// ResponseType G2C_ZBReady
+message C2G_ZBReady // ISessionRequest
+{
+	bool Ready = 1;
+	int32 RpcId = 90;
+}
+
+message G2C_ZBReady // ISessionResponse
+{
+	int32 ErrorCode = 1;
+	int32 RpcId = 90;
+	int32 Error = 91;
+	string Message = 92;
+}
+
+/// 服务端推送: 房间状态更新
+message G2C_ZBRoomUpdate // ISessionMessage
+{
+	ZBRoomInfo Room = 1;
+}
+
+/// 服务端推送: 对战开始
+message G2C_ZBBattleStart // ISessionMessage
+{
+	int32 RoomId = 1;
+	int32 Countdown = 2;
+	int64 Player1Id = 3;
+	int64 Player2Id = 4;
+}
+
+// ============================================================
+// 战斗协议
+// ============================================================
+
+/// 客户端帧输入(每帧发送,无需响应)
+message C2G_ZBBattleInput // ISessionMessage
+{
+	int32 Frame = 1;
+	int32 MoveDir = 2; // -1=左, 0=静止, 1=右
+	int32 Action = 3; // 0=无, 1=Jab, 2=Cross, 3=Hook, 4=Uppercut, 5=Block, 6=Dodge
+}
+
+/// 服务端状态快照(每Tick广播)
+message G2C_ZBBattleSnapshot // ISessionMessage
+{
+	int32 ServerFrame = 1;
+	ZBPlayerState Player1 = 2;
+	ZBPlayerState Player2 = 3;
+	int32 RemainingTime = 4;
+	int32 BattlePhase = 5; // 0=倒计时, 1=战斗中, 2=KO, 3=时间到
+}
+
+/// 服务端事件通知(命中/格挡等)
+message G2C_ZBBattleEvent // ISessionMessage
+{
+	int32 EventType = 1; // 1=命中, 2=格挡, 3=闪避, 4=KO
+	int64 AttackerId = 2;
+	int64 DefenderId = 3;
+	int32 Damage = 4;
+	int32 MoveType = 5;
+}
+
+/// 战斗结束
+message G2C_ZBBattleEnd // ISessionMessage
+{
+	int64 WinnerId = 1; // 0=平局
+	int32 Reason = 2; // 1=KO, 2=时间到, 3=投降
+	int32 GoldReward = 3;
+	int32 Player1Hp = 4;
+	int32 Player2Hp = 5;
+}
