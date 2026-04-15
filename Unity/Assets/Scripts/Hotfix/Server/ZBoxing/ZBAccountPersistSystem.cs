@@ -43,7 +43,7 @@ namespace ET.Server
             try
             {
                 string json = File.ReadAllText(self.SaveFilePath);
-                var options = new JsonSerializerOptions { PropertyNamingPolicy = null };
+                var options = new JsonSerializerOptions { PropertyNamingPolicy = null, IncludeFields = true };
                 ZBAccountSaveData saveData = JsonSerializer.Deserialize<ZBAccountSaveData>(json, options);
 
                 if (saveData == null)
@@ -96,7 +96,7 @@ namespace ET.Server
 
                 // 写入临时文件再重命名，避免写入中断导致数据损坏
                 string tempPath = self.SaveFilePath + ".tmp";
-                var options = new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = null };
+                var options = new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = null, IncludeFields = true };
                 string json = JsonSerializer.Serialize(saveData, options);
                 File.WriteAllText(tempPath, json);
 
