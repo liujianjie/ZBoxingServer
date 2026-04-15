@@ -22,6 +22,9 @@ namespace ET.Server
                 return;
             }
 
+            // 认证通过，移除5秒超时限制（与ET标准C2G_LoginGateHandler一致）
+            session.RemoveComponent<SessionAcceptTimeoutComponent>();
+
             // 注册成功后自动登录：在Session上挂载玩家组件
             ZBSessionPlayerComponent sessionPlayer = session.GetComponent<ZBSessionPlayerComponent>();
             if (sessionPlayer == null)

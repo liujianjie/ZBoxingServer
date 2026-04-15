@@ -27,13 +27,13 @@ namespace ET
         [EntitySystem]
         private static void Update(this NetComponent self)
         {
-            self.AService.Update();
+            self.AService?.Update();
         }
 
         [EntitySystem]
         private static void Destroy(this NetComponent self)
         {
-            self.AService.Dispose();
+            self.AService?.Dispose();
         }
 
         private static void OnError(this NetComponent self, long channelId, int error)

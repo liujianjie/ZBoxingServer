@@ -22,6 +22,9 @@ namespace ET.Server
                 return;
             }
 
+            // 认证通过，移除5秒超时限制（与ET标准C2G_LoginGateHandler一致）
+            session.RemoveComponent<SessionAcceptTimeoutComponent>();
+
             // 检查是否已在其他Session登录，踢掉旧Session
             if (accountComponent.IsOnline(account.PlayerId))
             {
