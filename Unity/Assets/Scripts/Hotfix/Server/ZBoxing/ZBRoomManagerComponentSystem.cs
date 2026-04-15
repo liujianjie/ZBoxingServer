@@ -422,5 +422,6 @@ namespace ET.Server
                 self.BroadcastRoomUpdate(affectedRoom, accountComponent);
             }
         }
+
     }
 }

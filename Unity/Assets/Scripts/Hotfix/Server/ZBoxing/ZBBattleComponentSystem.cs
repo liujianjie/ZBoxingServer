@@ -8,6 +8,8 @@ namespace ET.Server
     [EntitySystemOf(typeof(ZBBattleComponent))]
     [FriendOf(typeof(ZBBattleComponent))]
     [FriendOf(typeof(ZBBattleRoom))]
+    [FriendOf(typeof(ZBRoomManagerComponent))]
+    [FriendOf(typeof(ZBRoomComponent))]
     public static partial class ZBBattleComponentSystem
     {
         [EntitySystem]
@@ -25,6 +27,79 @@ namespace ET.Server
             self.BattleIdToInstanceId.Clear();
             self.PlayerToBattleId.Clear();
             Log.Info("[ZBoxing] 战斗管理器已销毁");
+        }
+
+        /// <summary>
+        /// 管理器Update：扫描已标记为待清理的战斗，执行销毁+房间重置
+        /// 在此处处理避免ZBBattleRoomSystem→ZBBattleComponentSystem的循环依赖
+        /// </summary>
+        [EntitySystem]
+        private static void Update(this ZBBattleComponent self)
+        {
+            // 收集待清理的战斗ID（避免迭代中修改字典）
+            List<long> toCleanup = null;
+            foreach (var kv in self.BattleIdToInstanceId)
+            {
+                ZBBattleRoom battle = self.GetChild<ZBBattleRoom>(kv.Value);
+                if (battle == null) continue;
+
+                // CleanupCountdown == -1 表示已标记待清理
+                if (battle.CleanupCountdown == -1)
+                {
+                    toCleanup ??= new List<long>();
+                    toCleanup.Add(kv.Key);
+                }
+            }
+
+            if (toCleanup == null) return;
+
+            // 执行清理（内联房间重置逻辑，避免循环依赖ZBRoomManagerComponentSystem）
+            Scene root = self.Root();
+            ZBRoomManagerComponent roomManager = root?.GetComponent<ZBRoomManagerComponent>();
+
+            foreach (long battleId in toCleanup)
+            {
+                ZBBattleRoom battle = self.GetBattle(battleId);
+                if (battle != null)
+                {
+                    int roomId = battle.RoomId;
+
+                    // 内联房间重置（不调用ZBRoomManagerComponentSystem扩展方法）
+                    if (roomManager != null)
+                    {
+                        ResetRoomAfterBattle(roomManager, roomId, root);
+                    }
+
+                    Log.Info($"[ZBoxing] 执行战斗清理: BattleId={battleId}, RoomId={roomId}");
+                }
+
+                // 销毁战斗Entity
+                self.DestroyBattle(battleId);
+            }
+        }
+
+        /// <summary>
+        /// 战斗结束后直接重置房间状态（内联，不调用ZBRoomManagerComponentSystem避免循环依赖）
+        /// </summary>
+        private static void ResetRoomAfterBattle(ZBRoomManagerComponent roomManager, int roomId, Scene root)
+        {
+            if (!roomManager.RoomIdToInstanceId.TryGetValue(roomId, out long instanceId))
+            {
+                return;
+            }
+
+            ZBRoomComponent room = roomManager.GetChild<ZBRoomComponent>(instanceId);
+            if (room == null)
+            {
+                return;
+            }
+
+            // 重置房间状态和准备状态
+            room.State = ZBRoomState.Full;
+            if (room.Host != null) room.Host.IsReady = false;
+            if (room.Guest != null) room.Guest.IsReady = false;
+
+            Log.Info($"[ZBoxing] 房间战后重置: RoomId={roomId}, State=Full");
         }
 
         /// <summary>
@@ -239,9 +314,17 @@ namespace ET.Server
         [EntitySystem]
         private static void Update(this ZBBattleRoom self)
         {
-            // 战斗已结束，不再Tick
+            // 战斗已结束，处理清理倒计时
             if (self.Phase == ZBBattlePhase.KO || self.Phase == ZBBattlePhase.TimeUp)
             {
+                if (self.CleanupCountdown > 0)
+                {
+                    self.CleanupCountdown--;
+                    if (self.CleanupCountdown <= 0)
+                    {
+                        self.ExecuteCleanup();
+                    }
+                }
                 return;
             }
 
@@ -271,6 +354,15 @@ namespace ET.Server
             self.BroadcastSnapshot();
         }
 
+        /// <summary>
+        /// 标记战斗需要清理（由ZBBattleComponentSystem.Update统一处理，避免循环依赖）
+        /// </summary>
+        private static void ExecuteCleanup(this ZBBattleRoom self)
+        {
+            // 标记为需清理（CleanupCountdown设为-1表示待清理）
+            self.CleanupCountdown = -1;
+        }
+
         // ============================================================
         // 倒计时阶段Tick
         // ============================================================
@@ -293,23 +385,28 @@ namespace ET.Server
             ZBInputFrame input1 = self.ConsumeInput(self.Player1);
             ZBInputFrame input2 = self.ConsumeInput(self.Player2);
 
-            // 2. 应用输入 → 更新玩家状态
-            //    （E.4角色状态机/E.5招式系统实现后替换此处占位逻辑）
+            // 2. 应用输入 → 更新玩家状态（角色状态机 E.4）
             self.ApplyInput(self.Player1, input1);
             self.ApplyInput(self.Player2, input2);
 
-            // 3. 递减剩余时间
+            // 3. 碰撞检测 — 双方互相检测攻击命中（E.6）
+            self.CheckHitDetection(self.Player1, self.Player2);
+            self.CheckHitDetection(self.Player2, self.Player1);
+
+            // 4. 连击重置计时（E.7）
+            TickComboReset(self.Player1);
+            TickComboReset(self.Player2);
+
+            // 5. 递减剩余时间
             self.RemainingFrames--;
 
-            // 4. 检查胜负条件
-            //    4a. KO判定（E.7伤害计算实现后生效）
+            // 6. 检查胜负条件
             if (self.Player1.Hp <= 0 || self.Player2.Hp <= 0)
             {
                 self.EndBattle(ZBBattlePhase.KO);
                 return;
             }
 
-            //    4b. 时间到
             if (self.RemainingFrames <= 0)
             {
                 self.EndBattle(ZBBattlePhase.TimeUp);
@@ -333,8 +430,12 @@ namespace ET.Server
         }
 
         // ============================================================
-        // 应用输入到玩家状态（基础版：仅处理移动）
-        // E.4/E.5会替换为完整的状态机+招式系统
+        // 角色状态机（E.4）— 每帧更新单个玩家状态
+        // 状态分类：
+        //   锁定态: 攻击(Jab/Cross/Hook/Uppercut)、闪避(Dodge)、受击(HitStun)、KO
+        //           → 帧计数驱动，到期自动回Idle，期间拒绝输入
+        //   持续态: 格挡(Block) → 有Block输入维持，无则退出
+        //   可取消态: Idle/MoveForward/MoveBackward → 随时接受新输入
         // ============================================================
         private static void ApplyInput(this ZBBattleRoom self, ZBBattlePlayer player, ZBInputFrame input)
         {
@@ -343,25 +444,120 @@ namespace ET.Server
                 return;
             }
 
-            if (input == null)
+            // --- KO终态：不处理任何输入 ---
+            if (player.AnimState == ZBAnimState.KO)
             {
-                // 无输入 → 保持Idle（如果不在攻击/受击等特殊状态中）
-                if (player.AnimState == ZBAnimState.MoveForward || player.AnimState == ZBAnimState.MoveBackward)
-                {
-                    player.AnimState = ZBAnimState.Idle;
-                }
                 return;
             }
 
-            // 处理移动方向
-            if (input.MoveDir != 0)
+            // --- 推进动画帧计数 ---
+            if (player.AnimFrame > 0)
+            {
+                player.AnimFrame++;
+            }
+
+            // --- 体力自然回复（非攻击/格挡/闪避状态时） ---
+            if (!IsActionState(player.AnimState))
+            {
+                player.StaminaRegenDelay--;
+                if (player.StaminaRegenDelay <= 0)
+                {
+                    player.StaminaRegenDelay = 0;
+                    // 5点/秒 ÷ 30帧 ≈ 每6帧回复1点
+                    if (self.CurrentFrame % 6 == 0 && player.Stamina < ZBBattleConst.InitStamina)
+                    {
+                        player.Stamina++;
+                    }
+                }
+            }
+
+            // --- 锁定状态处理（攻击/闪避/受击） ---
+            if (IsLockedState(player.AnimState))
+            {
+                int totalFrames = GetAnimTotalFrames(player.AnimState);
+                if (player.AnimFrame >= totalFrames)
+                {
+                    // 动作结束，回到Idle
+                    player.AnimState = ZBAnimState.Idle;
+                    player.AnimFrame = 0;
+                }
+                else
+                {
+                    // 动作未结束，忽略新输入（但仍更新朝向）
+                    self.UpdateFacing(player);
+                    return;
+                }
+            }
+
+            // --- 格挡持续态处理 ---
+            if (player.AnimState == ZBAnimState.Block)
+            {
+                // 持续格挡消耗体力: 3/秒 ÷ 30帧 ≈ 每10帧消耗1点
+                if (self.CurrentFrame % 10 == 0)
+                {
+                    player.Stamina--;
+                }
+
+                // 体力耗尽或松开格挡键 → 退出格挡
+                bool holdingBlock = input != null && input.Action == ZBInputAction.Block;
+                if (player.Stamina <= 0 || !holdingBlock)
+                {
+                    player.AnimState = ZBAnimState.Idle;
+                    player.AnimFrame = 0;
+                    if (player.Stamina < 0) player.Stamina = 0;
+                    // 格挡结束后有5帧后摇，设置回复延迟
+                    player.StaminaRegenDelay = ZBBattleConst.BlockRecoveryFrames;
+                }
+                else
+                {
+                    // 继续格挡，不处理移动
+                    self.UpdateFacing(player);
+                    return;
+                }
+            }
+
+            // --- 处理新动作输入（优先于移动） ---
+            if (input != null && input.Action != ZBInputAction.None)
+            {
+                int staminaCost = GetActionStaminaCost(input.Action);
+
+                // 体力检查
+                if (player.Stamina >= staminaCost)
+                {
+                    int animState = ActionToAnimState(input.Action);
+                    if (animState != ZBAnimState.Idle)
+                    {
+                        // 格挡进入持续态（不消耗前置体力）
+                        if (animState == ZBAnimState.Block)
+                        {
+                            player.AnimState = ZBAnimState.Block;
+                            player.AnimFrame = 0;
+                        }
+                        else
+                        {
+                            // 攻击/闪避: 扣除体力、进入锁定态
+                            player.Stamina -= staminaCost;
+                            player.AnimState = animState;
+                            player.AnimFrame = 1;
+                            // 动作后设置体力回复延迟
+                            player.StaminaRegenDelay = ZBBattleConst.StaminaRegenDelayFrames;
+                        }
+                        self.UpdateFacing(player);
+                        return;
+                    }
+                }
+                // 体力不足时忽略动作，继续处理移动
+            }
+
+            // --- 处理移动方向 ---
+            if (input != null && input.MoveDir != 0)
             {
                 float moveSpeed = 3.0f / ZBBattleConst.TickRate; // 3单位/秒 → 每帧移动量
                 player.PosX += input.MoveDir * moveSpeed;
 
-                // 限制在场地范围内 [-5, 5]
-                if (player.PosX < -5f) player.PosX = -5f;
-                if (player.PosX > 5f) player.PosX = 5f;
+                // 限制在场地范围内
+                if (player.PosX < ZBBattleConst.ArenaMinX) player.PosX = ZBBattleConst.ArenaMinX;
+                if (player.PosX > ZBBattleConst.ArenaMaxX) player.PosX = ZBBattleConst.ArenaMaxX;
 
                 // 更新移动动画状态
                 bool movingForward = (player.FacingRight && input.MoveDir > 0)
@@ -370,26 +566,282 @@ namespace ET.Server
             }
             else
             {
-                // 无移动输入 → Idle
+                // 无移动输入 → 回Idle
                 if (player.AnimState == ZBAnimState.MoveForward || player.AnimState == ZBAnimState.MoveBackward)
                 {
                     player.AnimState = ZBAnimState.Idle;
                 }
             }
 
-            // 更新朝向（始终面向对手）
+            // --- 更新朝向 ---
+            self.UpdateFacing(player);
+        }
+
+        /// <summary>
+        /// 外部触发受击硬直（E.6碰撞检测调用）
+        /// </summary>
+        public static void ApplyHitStun(this ZBBattleRoom self, ZBBattlePlayer player)
+        {
+            if (player == null || player.AnimState == ZBAnimState.KO)
+            {
+                return;
+            }
+
+            player.AnimState = ZBAnimState.HitStun;
+            player.AnimFrame = 1;
+        }
+
+        /// <summary>
+        /// 触发KO状态（HP归零时调用）
+        /// </summary>
+        public static void ApplyKO(this ZBBattleRoom self, ZBBattlePlayer player)
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            player.AnimState = ZBAnimState.KO;
+            player.AnimFrame = 0;
+            player.Hp = 0;
+        }
+
+        /// <summary>
+        /// 更新玩家朝向（始终面向对手）
+        /// </summary>
+        private static void UpdateFacing(this ZBBattleRoom self, ZBBattlePlayer player)
+        {
             ZBBattlePlayer opponent = self.GetOpponent(player.PlayerId);
             if (opponent != null)
             {
                 player.FacingRight = player.PosX < opponent.PosX;
             }
-
-            // 动作输入（E.4/E.5实现后处理，当前仅记录日志）
-            // input.Action != ZBInputAction.None 时由状态机处理
         }
 
         // ============================================================
-        // 战斗结束处理
+        // 状态分类辅助方法
+        // ============================================================
+
+        /// <summary>
+        /// 锁定状态：帧计数驱动，到期自动回Idle，期间拒绝输入
+        /// </summary>
+        private static bool IsLockedState(int animState)
+        {
+            return animState == ZBAnimState.Jab
+                   || animState == ZBAnimState.Cross
+                   || animState == ZBAnimState.Hook
+                   || animState == ZBAnimState.Uppercut
+                   || animState == ZBAnimState.Dodge
+                   || animState == ZBAnimState.HitStun;
+        }
+
+        /// <summary>
+        /// 动作状态（攻击/格挡/闪避）：体力回复暂停
+        /// </summary>
+        private static bool IsActionState(int animState)
+        {
+            return animState == ZBAnimState.Jab
+                   || animState == ZBAnimState.Cross
+                   || animState == ZBAnimState.Hook
+                   || animState == ZBAnimState.Uppercut
+                   || animState == ZBAnimState.Block
+                   || animState == ZBAnimState.Dodge;
+        }
+
+        /// <summary>
+        /// 输入动作 → 动画状态映射
+        /// </summary>
+        private static int ActionToAnimState(int action)
+        {
+            switch (action)
+            {
+                case ZBInputAction.Jab: return ZBAnimState.Jab;
+                case ZBInputAction.Cross: return ZBAnimState.Cross;
+                case ZBInputAction.Hook: return ZBAnimState.Hook;
+                case ZBInputAction.Uppercut: return ZBAnimState.Uppercut;
+                case ZBInputAction.Block: return ZBAnimState.Block;
+                case ZBInputAction.Dodge: return ZBAnimState.Dodge;
+                default: return ZBAnimState.Idle;
+            }
+        }
+
+        /// <summary>
+        /// 获取动作的体力消耗（从ZBMoveDatabase查找）
+        /// </summary>
+        private static int GetActionStaminaCost(int action)
+        {
+            if (action == ZBInputAction.Block) return 0; // 格挡持续消耗，不在此处扣除
+            ZBMoveData data = ZBMoveDatabase.Get(action);
+            return data?.StaminaCost ?? 0;
+        }
+
+        /// <summary>
+        /// 获取动作的总帧数（从ZBMoveDatabase查找）
+        /// </summary>
+        private static int GetAnimTotalFrames(int animState)
+        {
+            return ZBMoveDatabase.GetTotalFrames(animState);
+        }
+
+        // ============================================================
+        // E.6 碰撞检测：攻击者Hitbox vs 防御者Hurtbox
+        // ============================================================
+
+        /// <summary>
+        /// 检测攻击者是否命中防御者
+        /// </summary>
+        private static void CheckHitDetection(this ZBBattleRoom self, ZBBattlePlayer attacker, ZBBattlePlayer defender)
+        {
+            if (attacker == null || defender == null) return;
+
+            // 攻击者必须在攻击状态的活动帧阶段
+            int phase = ZBMoveDatabase.GetCurrentPhase(attacker.AnimState, attacker.AnimFrame);
+            if (phase != ZBMovePhase.Active) return;
+
+            // 防止同一次攻击多次命中（只在活动帧第一帧判定）
+            ZBMoveData moveData = ZBMoveDatabase.GetByAnimState(attacker.AnimState);
+            if (moveData == null) return;
+            int activeStartFrame = moveData.StartupFrames + 1;
+            if (attacker.AnimFrame != activeStartFrame) return;
+
+            // 防御者闪避无敌帧 → 不命中
+            if (ZBMoveDatabase.IsInvincible(defender.AnimState, defender.AnimFrame))
+            {
+                // 广播闪避事件
+                self.BroadcastBattleEvent(3, attacker.PlayerId, defender.PlayerId, 0, moveData.MoveType);
+                return;
+            }
+
+            // AABB碰撞检测：攻击者Hitbox与防御者Hurtbox
+            if (!IsHitboxOverlap(attacker, defender))
+            {
+                return;
+            }
+
+            // === 命中确认 ===
+
+            // 基础伤害
+            int damage = moveData.Damage;
+            bool isBlocking = defender.AnimState == ZBAnimState.Block;
+
+            if (isBlocking)
+            {
+                // 格挡减伤
+                damage = damage * (100 - ZBBattleConst.BlockDamageReductionPct) / 100;
+                // 格挡打断连击
+                defender.ComboCount = 0;
+                defender.ComboResetCounter = 0;
+
+                // 广播格挡事件
+                self.BroadcastBattleEvent(2, attacker.PlayerId, defender.PlayerId, damage, moveData.MoveType);
+            }
+            else
+            {
+                // 正面命中 — 连击加成
+                int comboBonus = defender.ComboCount * ZBBattleConst.ComboBonusPct;
+                if (comboBonus > ZBBattleConst.ComboMaxBonusPct)
+                {
+                    comboBonus = ZBBattleConst.ComboMaxBonusPct;
+                }
+                damage = damage * (100 + comboBonus) / 100;
+
+                // 受击硬直
+                self.ApplyHitStun(defender);
+
+                // 连击计数+1，重置衰减计时器
+                defender.ComboCount++;
+                defender.ComboResetCounter = ZBBattleConst.ComboResetFrames;
+
+                // 广播命中事件
+                self.BroadcastBattleEvent(1, attacker.PlayerId, defender.PlayerId, damage, moveData.MoveType);
+            }
+
+            // 扣血
+            defender.Hp -= damage;
+            if (defender.Hp < 0) defender.Hp = 0;
+
+            // 击退
+            float knockback = ZBBattleConst.KnockbackBase * moveData.KnockbackMult;
+            if (isBlocking) knockback *= 0.5f; // 格挡时击退减半
+            float knockDir = attacker.FacingRight ? 1f : -1f;
+            defender.PosX += knockDir * knockback;
+
+            // 场地边界限制
+            if (defender.PosX < ZBBattleConst.ArenaMinX) defender.PosX = ZBBattleConst.ArenaMinX;
+            if (defender.PosX > ZBBattleConst.ArenaMaxX) defender.PosX = ZBBattleConst.ArenaMaxX;
+
+            // KO检测
+            if (defender.Hp <= 0)
+            {
+                self.ApplyKO(defender);
+                self.BroadcastBattleEvent(4, attacker.PlayerId, defender.PlayerId, 0, moveData.MoveType);
+            }
+        }
+
+        /// <summary>
+        /// AABB碰撞检测：攻击者Hitbox vs 防御者Hurtbox
+        /// Hitbox: 攻击者面前延伸的矩形区域
+        /// Hurtbox: 防御者身体的矩形区域
+        /// </summary>
+        private static bool IsHitboxOverlap(ZBBattlePlayer attacker, ZBBattlePlayer defender)
+        {
+            // 计算Hitbox（在攻击者面前）
+            float hitboxCenterX;
+            if (attacker.FacingRight)
+            {
+                hitboxCenterX = attacker.PosX + ZBBattleConst.HitboxReach * 0.5f;
+            }
+            else
+            {
+                hitboxCenterX = attacker.PosX - ZBBattleConst.HitboxReach * 0.5f;
+            }
+
+            float hitboxMinX = hitboxCenterX - ZBBattleConst.HitboxHalfWidth;
+            float hitboxMaxX = hitboxCenterX + ZBBattleConst.HitboxHalfWidth;
+
+            // Hurtbox（防御者身体中心）
+            float hurtboxMinX = defender.PosX - ZBBattleConst.HurtboxHalfWidth;
+            float hurtboxMaxX = defender.PosX + ZBBattleConst.HurtboxHalfWidth;
+
+            // 1D AABB重叠检测（2D侧视角，Y轴不需要）
+            return hitboxMaxX >= hurtboxMinX && hitboxMinX <= hurtboxMaxX;
+        }
+
+        /// <summary>
+        /// 连击重置计时：被命中后开始倒数，到期后连击数归零
+        /// </summary>
+        private static void TickComboReset(ZBBattlePlayer player)
+        {
+            if (player == null || player.ComboCount <= 0) return;
+
+            if (player.ComboResetCounter > 0)
+            {
+                player.ComboResetCounter--;
+            }
+            else
+            {
+                // 计时器到期，重置连击
+                player.ComboCount = 0;
+            }
+        }
+
+        /// <summary>
+        /// 广播战斗事件
+        /// </summary>
+        private static void BroadcastBattleEvent(this ZBBattleRoom self,
+            int eventType, long attackerId, long defenderId, int damage, int moveType)
+        {
+            G2C_ZBBattleEvent evt = G2C_ZBBattleEvent.Create();
+            evt.EventType = eventType;
+            evt.AttackerId = attackerId;
+            evt.DefenderId = defenderId;
+            evt.Damage = damage;
+            evt.MoveType = moveType;
+            self.Broadcast(evt);
+        }
+
+        // ============================================================
+        // E.8 战斗结束处理（胜负判定+广播+延迟清理）
         // ============================================================
         private static void EndBattle(this ZBBattleRoom self, int endPhase)
         {
@@ -399,13 +851,24 @@ namespace ET.Server
             long winnerId = 0;
             int reason = endPhase == ZBBattlePhase.KO ? 1 : 2; // 1=KO, 2=时间到
 
-            if (self.Player1.Hp <= 0 && self.Player2.Hp > 0)
+            if (endPhase == ZBBattlePhase.KO)
             {
-                winnerId = self.Player2.PlayerId;
-            }
-            else if (self.Player2.Hp <= 0 && self.Player1.Hp > 0)
-            {
-                winnerId = self.Player1.PlayerId;
+                bool p1Dead = self.Player1.Hp <= 0;
+                bool p2Dead = self.Player2.Hp <= 0;
+
+                if (p1Dead && p2Dead)
+                {
+                    // 双方同时KO → 平局
+                    winnerId = 0;
+                }
+                else if (p1Dead)
+                {
+                    winnerId = self.Player2.PlayerId;
+                }
+                else if (p2Dead)
+                {
+                    winnerId = self.Player1.PlayerId;
+                }
             }
             else if (endPhase == ZBBattlePhase.TimeUp)
             {
@@ -437,8 +900,8 @@ namespace ET.Server
                      $"HP: {self.Player1.Hp} vs {self.Player2.Hp}, " +
                      $"Frame={self.CurrentFrame}");
 
-            // 延迟销毁战斗（给客户端时间处理结算）
-            // E.8完善时可能改为定时器延迟销毁
+            // 启动清理倒计时（在Update中倒数后执行清理）
+            self.CleanupCountdown = ZBBattleConst.BattleCleanupFrames;
         }
 
         // ============================================================
@@ -524,6 +987,16 @@ namespace ET.Server
         public static bool IsAcceptingInput(this ZBBattleRoom self)
         {
             return self.Phase == ZBBattlePhase.Fighting;
+        }
+
+        /// <summary>
+        /// 检查客户端帧号是否在容忍范围内
+        /// </summary>
+        public static bool IsFrameInTolerance(this ZBBattleRoom self, int clientFrame)
+        {
+            int frameDiff = clientFrame - self.CurrentFrame;
+            return frameDiff >= -ZBBattleConst.InputFrameTolerance
+                   && frameDiff <= ZBBattleConst.InputFrameTolerance;
         }
 
         /// <summary>

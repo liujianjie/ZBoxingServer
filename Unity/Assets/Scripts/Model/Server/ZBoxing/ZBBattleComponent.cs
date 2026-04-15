@@ -61,6 +61,20 @@ namespace ET.Server
         public const float Player2StartX = 2.0f;                    // Player2初始X位置
         public const int TickIntervalMs = 1000 / TickRate;            // 每帧间隔(毫秒) = 33
         public const int InputBufferMax = 10;                       // 输入缓冲区上限
+        public const int InputFrameTolerance = 15;                  // 帧号容忍偏差（±15帧=±0.5秒）
+        public const int StaminaRegenDelayFrames = 30;              // 动作后体力回复延迟(帧) = 1秒
+        public const int BlockRecoveryFrames = 5;                   // 格挡解除后硬直(帧)
+        public const float ArenaMinX = -5f;                         // 场地左边界
+        public const float ArenaMaxX = 5f;                          // 场地右边界
+        public const float HurtboxHalfWidth = 0.4f;                // 受击判定半宽
+        public const float HitboxReach = 1.2f;                     // 攻击判定前方延伸距离
+        public const float HitboxHalfWidth = 0.3f;                 // 攻击判定半宽
+        public const float KnockbackBase = 0.5f;                   // 基础击退距离
+        public const int BlockDamageReductionPct = 70;              // 格挡减伤百分比
+        public const int ComboBonusPct = 10;                        // 连击伤害加成(每次+10%)
+        public const int ComboMaxBonusPct = 50;                     // 连击伤害上限加成(50%)
+        public const int ComboResetFrames = 30;                     // 连击重置延迟(帧) = 1秒无命中后重置
+        public const int BattleCleanupFrames = 90;                  // 战斗结束后清理延迟(帧) = 3秒
     }
 
     // ============================================================
@@ -96,6 +110,8 @@ namespace ET.Server
         public int AnimState;             // ZBAnimState枚举
         public int AnimFrame;             // 当前动作已执行帧数
         public int ComboCount;            // 连击计数
+        public int StaminaRegenDelay;     // 体力回复延迟剩余帧数（>0时不回复）
+        public int ComboResetCounter;     // 连击重置计数器（每帧递减，归零则ComboCount清零）
 
         // --- 输入缓冲 ---
         public List<ZBInputFrame> InputBuffer = new();
@@ -129,13 +145,14 @@ namespace ET.Server
         // --- 阶段 ---
         public int Phase;                 // ZBBattlePhase枚举值
         public int CountdownFrames;       // 倒计时剩余帧数
+        public int CleanupCountdown;      // 战斗结束后清理倒计时（帧数,>0时等待）
     }
 
     // ============================================================
     // 战斗管理器组件（挂载在Gate Scene上）
     // ============================================================
     [ComponentOf(typeof(Scene))]
-    public class ZBBattleComponent : Entity, IAwake, IDestroy
+    public class ZBBattleComponent : Entity, IAwake, IDestroy, IUpdate
     {
         /// <summary>
         /// 战斗ID → 战斗Entity的InstanceId
