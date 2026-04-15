@@ -88,6 +88,12 @@ namespace ET.Server
         public const int NotReady = 15;           // 未准备
         public const int NotRoomHost = 16;        // 不是房主
 
+        // 战斗系统错误码 (20~29)
+        public const int NotInBattle = 20;        // 不在战斗中
+        public const int AlreadyInBattle = 21;    // 已在战斗中
+        public const int BattleNotFound = 22;     // 战斗不存在
+        public const int BattleCreateFailed = 23; // 战斗创建失败
+
         // 服务端内部错误 (99)
         public const int ServerError = 99;        // 服务端内部异常
     }

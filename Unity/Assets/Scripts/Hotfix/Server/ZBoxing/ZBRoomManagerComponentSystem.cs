@@ -5,6 +5,7 @@ namespace ET.Server
     [EntitySystemOf(typeof(ZBRoomManagerComponent))]
     [FriendOf(typeof(ZBRoomManagerComponent))]
     [FriendOf(typeof(ZBRoomComponent))]
+    [FriendOf(typeof(ZBBattleRoom))]
     public static partial class ZBRoomManagerComponentSystem
     {
         [EntitySystem]
@@ -346,7 +347,7 @@ namespace ET.Server
         }
 
         /// <summary>
-        /// 检查房间是否满足开战条件（双方都在且都已准备），满足则触发开战
+        /// 检查房间是否满足开战条件（双方都在且都已准备），满足则创建战斗Entity并通知双方
         /// </summary>
         public static bool TryStartBattle(this ZBRoomManagerComponent self, ZBRoomComponent room)
         {
@@ -364,10 +365,29 @@ namespace ET.Server
             // 切换房间状态为对战中
             room.State = ZBRoomState.Fighting;
 
-            // 向双方推送开战通知
+            // 获取或创建战斗管理器
+            Scene root = self.Root();
+            ZBBattleComponent battleComponent = root.GetComponent<ZBBattleComponent>();
+            if (battleComponent == null)
+            {
+                battleComponent = root.AddComponent<ZBBattleComponent>();
+            }
+
+            // 创建战斗Entity
+            ZBBattleRoom battle = battleComponent.CreateBattle(room.RoomId, room.Host, room.Guest);
+            if (battle == null)
+            {
+                Log.Error($"[ZBoxing] 创建战斗失败: RoomId={room.RoomId}");
+                room.State = ZBRoomState.Full; // 回滚房间状态
+                return false;
+            }
+
+            // 向双方推送开战通知（含玩家ID）
             var battleStart = G2C_ZBBattleStart.Create();
             battleStart.RoomId = room.RoomId;
-            battleStart.Countdown = 3; // 3秒倒计时
+            battleStart.Countdown = ZBBattleConst.CountdownSec;
+            battleStart.Player1Id = room.Host.PlayerId;
+            battleStart.Player2Id = room.Guest.PlayerId;
 
             if (room.Host.Session != null && !room.Host.Session.IsDisposed)
             {
@@ -379,7 +399,8 @@ namespace ET.Server
                 room.Guest.Session.Send(battleStart);
             }
 
-            Log.Info($"[ZBoxing] 对战开始: RoomId={room.RoomId}, Host={room.Host.Nickname} vs Guest={room.Guest.Nickname}");
+            Log.Info($"[ZBoxing] 对战开始: RoomId={room.RoomId}, BattleId={battle.BattleId}, " +
+                     $"Host={room.Host.Nickname} vs Guest={room.Guest.Nickname}");
 
             return true;
         }

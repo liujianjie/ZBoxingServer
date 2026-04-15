@@ -24,13 +24,37 @@ namespace ET.Server
                 return;
             }
 
-            // 玩家下线，清除在线状态
+            long playerId = self.PlayerId;
+
+            // 清除在线状态
             ZBAccountComponent accountComponent = root.GetComponent<ZBAccountComponent>();
             if (accountComponent != null)
             {
-                accountComponent.SetOffline(self.PlayerId);
-                Log.Info($"[ZBoxing] 玩家下线: {self.Nickname} (ID={self.PlayerId})");
+                accountComponent.SetOffline(playerId);
             }
+
+            // 战斗断线处理（设Session=null，不立即结束战斗）
+            ZBBattleComponent battleComponent = root.GetComponent<ZBBattleComponent>();
+            if (battleComponent != null)
+            {
+                battleComponent.OnPlayerDisconnect(playerId);
+            }
+
+            // 房间断线处理（离开房间，可能解散）
+            ZBRoomManagerComponent roomManager = root.GetComponent<ZBRoomManagerComponent>();
+            if (roomManager != null)
+            {
+                roomManager.OnPlayerDisconnect(playerId, accountComponent);
+            }
+
+            // 匹配队列断线处理
+            ZBMatchQueueComponent matchQueue = root.GetComponent<ZBMatchQueueComponent>();
+            if (matchQueue != null)
+            {
+                matchQueue.OnPlayerDisconnect(playerId);
+            }
+
+            Log.Info($"[ZBoxing] 玩家下线: {self.Nickname} (ID={playerId})");
         }
 
         /// <summary>
