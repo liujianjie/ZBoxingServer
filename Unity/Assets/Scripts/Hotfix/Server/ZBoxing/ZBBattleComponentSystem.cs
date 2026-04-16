@@ -184,10 +184,20 @@ namespace ET.Server
             battleRoom.Phase = ZBBattlePhase.Countdown;
             battleRoom.CountdownFrames = ZBBattleConst.CountdownFrames;
 
-            // 注册映射
+            // 注册映射（Bot PlayerId == -1 时跳过注册，避免字典冲突）
             self.BattleIdToInstanceId[battleRoom.BattleId] = battleRoom.InstanceId;
             self.PlayerToBattleId[host.PlayerId] = battleRoom.BattleId;
-            self.PlayerToBattleId[guest.PlayerId] = battleRoom.BattleId;
+            if (guest.PlayerId != -1)
+            {
+                self.PlayerToBattleId[guest.PlayerId] = battleRoom.BattleId;
+            }
+
+            // 如果Player2是Bot（Session为null），创建Bot控制器子Entity
+            if (battleRoom.Player2.Session == null)
+            {
+                battleRoom.AddChild<ZBBotController, long, int>(battleRoom.Player2.PlayerId, 2);
+                Log.Info($"[ZBoxing] Bot控制器已创建: PlayerId={battleRoom.Player2.PlayerId}, BattleId={battleRoom.BattleId}");
+            }
 
             Log.Info($"[ZBoxing] 战斗创建成功: BattleId={battleRoom.BattleId}, RoomId={roomId}, " +
                      $"{host.Nickname} vs {guest.Nickname}");

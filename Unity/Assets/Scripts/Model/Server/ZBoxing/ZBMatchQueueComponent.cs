@@ -19,7 +19,7 @@ namespace ET.Server
     /// 维护等待匹配的玩家队列，凑齐2人后自动创建房间
     /// </summary>
     [ComponentOf(typeof(Scene))]
-    public class ZBMatchQueueComponent : Entity, IAwake, IDestroy
+    public class ZBMatchQueueComponent : Entity, IAwake, IDestroy, IUpdate
     {
         /// <summary>
         /// 等待匹配的玩家队列（先进先出）

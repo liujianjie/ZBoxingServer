@@ -169,4 +169,30 @@ namespace ET.Server
         /// </summary>
         public long NextBattleId = 1;
     }
+
+    // ============================================================
+    // Bot控制器Entity（挂载在ZBBattleRoom下）
+    // ============================================================
+    /// <summary>
+    /// Bot控制器 — 管理一个虚拟玩家的AI决策
+    /// 挂载在 ZBBattleRoom 下作为子Entity
+    /// </summary>
+    [ChildOf(typeof(ZBBattleRoom))]
+    public class ZBBotController : Entity, IAwake<long, int>, IUpdate, IDestroy
+    {
+        /// <summary>Bot的PlayerId（通常为-1）</summary>
+        public long BotPlayerId;
+
+        /// <summary>难度等级 1=简单 2=中等 3=困难</summary>
+        public int Difficulty;
+
+        /// <summary>上次决策的帧号（避免每帧重复决策）</summary>
+        public int LastDecisionFrame;
+
+        /// <summary>决策间隔帧数（简单版每5帧决策一次=6次/秒）</summary>
+        public int DecisionInterval;
+
+        /// <summary>随机数生成器（服务端AI决策，不参与帧同步）</summary>
+        public System.Random Rng;
+    }
 }

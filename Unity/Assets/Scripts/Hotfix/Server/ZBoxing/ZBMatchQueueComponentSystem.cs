@@ -3,8 +3,18 @@ namespace ET.Server
     [EntitySystemOf(typeof(ZBMatchQueueComponent))]
     [FriendOf(typeof(ZBMatchQueueComponent))]
     [FriendOf(typeof(ZBRoomComponent))]
+    [FriendOf(typeof(ZBRoomManagerComponent))]
     public static partial class ZBMatchQueueComponentSystem
     {
+        // 匹配超时阈值（毫秒）
+        private const long MatchTimeoutMs = 30000;
+
+        // Bot虚拟PlayerId
+        private const long BotPlayerId = -1;
+
+        // Bot昵称
+        private const string BotNickname = "AI Bot";
+
         [EntitySystem]
         private static void Awake(this ZBMatchQueueComponent self)
         {
@@ -18,6 +28,98 @@ namespace ET.Server
             self.Queue.Clear();
             self.PlayerMap.Clear();
             Log.Info("[ZBoxing] 匹配队列销毁");
+        }
+
+        /// <summary>
+        /// Update：每帧检查队列首个玩家是否等待超时，超时则创建Bot对战
+        /// </summary>
+        [EntitySystem]
+        private static void Update(this ZBMatchQueueComponent self)
+        {
+            // 队列为空则无需检查
+            if (self.Queue.Count == 0)
+            {
+                return;
+            }
+
+            // 清理断线玩家后再检查
+            self.CleanDisconnected();
+
+            if (self.Queue.Count == 0)
+            {
+                return;
+            }
+
+            ZBMatchPlayer first = self.Queue[0];
+            long now = TimeInfo.Instance.ServerNow();
+
+            // 检查等待时长是否超过30秒
+            if (now - first.EnqueueTime >= MatchTimeoutMs)
+            {
+                Log.Info($"[ZBoxing] 匹配超时，为 {first.Nickname}(ID={first.PlayerId}) 创建Bot对战");
+                self.CreateMatchWithBot(first);
+            }
+        }
+
+        /// <summary>
+        /// 匹配超时 — 为指定玩家创建Bot对战
+        /// </summary>
+        private static void CreateMatchWithBot(this ZBMatchQueueComponent self, ZBMatchPlayer player)
+        {
+            // 从队列移除该玩家
+            self.Queue.Remove(player);
+            self.PlayerMap.Remove(player.PlayerId);
+
+            Scene root = self.Root();
+
+            // 获取或创建房间管理器
+            ZBRoomManagerComponent roomManager = root.GetComponent<ZBRoomManagerComponent>();
+            if (roomManager == null)
+            {
+                roomManager = root.AddComponent<ZBRoomManagerComponent>();
+            }
+
+            // 玩家作为房主创建房间
+            int err = roomManager.CreateRoom(
+                "Bot对战房间",
+                player.PlayerId,
+                player.Nickname,
+                player.Session,
+                out ZBRoomComponent room
+            );
+
+            if (err != ZBErrorCode.Success || room == null)
+            {
+                Log.Warning($"[ZBoxing] Bot对战：创建房间失败 err={err}, PlayerId={player.PlayerId}");
+                return;
+            }
+
+            // 直接内联方式将Bot加入为Guest，绕过JoinRoom对PlayerId的唯一性检查
+            room.Guest = new ZBRoomPlayer
+            {
+                PlayerId = BotPlayerId,
+                Nickname = BotNickname,
+                Session = null,   // Bot无Session
+                IsReady = true,   // Bot直接准备
+            };
+            room.State = ZBRoomState.Full;
+
+            // 玩家也标记为准备
+            if (room.Host != null)
+            {
+                room.Host.IsReady = true;
+            }
+
+            Log.Info($"[ZBoxing] Bot已加入房间: RoomId={room.RoomId}, Bot={BotNickname}");
+
+            // 双方都已准备，尝试开战
+            bool started = roomManager.TryStartBattle(room);
+            if (!started)
+            {
+                // 开战失败则解散房间，避免状态遗留
+                roomManager.DissolveRoom(room);
+                Log.Warning($"[ZBoxing] Bot对战：启动战斗失败, RoomId={room.RoomId}");
+            }
         }
 
         /// <summary>
