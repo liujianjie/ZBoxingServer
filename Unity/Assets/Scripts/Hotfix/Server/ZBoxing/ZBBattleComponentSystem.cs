@@ -921,7 +921,10 @@ namespace ET.Server
         {
             G2C_ZBBattleSnapshot snapshot = G2C_ZBBattleSnapshot.Create();
             snapshot.ServerFrame = self.CurrentFrame;
-            snapshot.RemainingTime = self.RemainingFrames;
+            // 修复BUG-7：倒计时阶段发送倒计时剩余帧，战斗阶段发送回合剩余帧
+            snapshot.RemainingTime = (self.Phase == ZBBattlePhase.Countdown)
+                ? self.CountdownFrames
+                : self.RemainingFrames;
             snapshot.BattlePhase = self.Phase;
 
             // 填充Player1状态
