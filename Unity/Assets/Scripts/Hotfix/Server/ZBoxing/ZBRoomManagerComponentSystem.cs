@@ -24,6 +24,77 @@ namespace ET.Server
             Log.Info("[ZBoxing] 房间管理器销毁");
         }
 
+        // 等待超时阈值（毫秒）—— 创建房间后30秒无人加入则注入Bot
+        private const long RoomWaitTimeoutMs = 30000;
+        private const long BotPlayerId = -1;
+        private const string BotNickname = "AI Bot";
+
+        /// <summary>
+        /// 每帧检查等待中的房间，超时30秒无人加入则自动注入Bot
+        /// </summary>
+        [EntitySystem]
+        private static void Update(this ZBRoomManagerComponent self)
+        {
+            long now = TimeInfo.Instance.ServerNow();
+
+            // 收集需要注入Bot的房间（避免遍历中修改集合）
+            List<ZBRoomComponent> timeoutRooms = null;
+            foreach (var kv in self.RoomIdToInstanceId)
+            {
+                var room = self.GetChild<ZBRoomComponent>(kv.Value);
+                if (room == null) continue;
+                if (room.State != ZBRoomState.Waiting) continue;
+                if (room.Guest != null) continue;
+                if (room.CreateTime <= 0) continue;
+
+                if (now - room.CreateTime >= RoomWaitTimeoutMs)
+                {
+                    timeoutRooms ??= new List<ZBRoomComponent>();
+                    timeoutRooms.Add(room);
+                }
+            }
+
+            if (timeoutRooms == null) return;
+
+            Scene root = self.Root();
+            ZBAccountComponent accountComponent = root.GetComponent<ZBAccountComponent>();
+
+            foreach (var room in timeoutRooms)
+            {
+                Log.Info($"[ZBoxing] 房间等待超时，注入Bot: RoomId={room.RoomId}, Host={room.Host?.Nickname}");
+
+                // 注入Bot为Guest
+                room.Guest = new ZBRoomPlayer
+                {
+                    PlayerId = BotPlayerId,
+                    Nickname = BotNickname,
+                    Session = null,
+                    IsReady = true,
+                };
+                room.State = ZBRoomState.Full;
+
+                // 房主也标记为准备
+                if (room.Host != null)
+                {
+                    room.Host.IsReady = true;
+                }
+
+                // 推送房间更新（Bot加入通知）
+                if (accountComponent != null)
+                {
+                    self.BroadcastRoomUpdate(room, accountComponent);
+                }
+
+                // 尝试开战
+                bool started = self.TryStartBattle(room);
+                if (!started)
+                {
+                    self.DissolveRoom(room);
+                    Log.Warning($"[ZBoxing] Bot房间开战失败，解散: RoomId={room.RoomId}");
+                }
+            }
+        }
+
         /// <summary>
         /// 创建房间
         /// </summary>
@@ -42,6 +113,7 @@ namespace ET.Server
             room.RoomId = self.NextRoomId++;
             room.RoomName = string.IsNullOrEmpty(roomName) ? $"房间{room.RoomId}" : roomName;
             room.State = ZBRoomState.Waiting;
+            room.CreateTime = TimeInfo.Instance.ServerNow();
 
             // 创建者成为房主
             room.Host = new ZBRoomPlayer
@@ -136,6 +208,12 @@ namespace ET.Server
                 self.RoomIdToInstanceId.Remove(roomId);
                 self.PlayerToRoomId.Remove(playerId);
                 return ZBErrorCode.RoomNotFound;
+            }
+
+            // 对战中不允许离开房间
+            if (room.State == ZBRoomState.Fighting)
+            {
+                return ZBErrorCode.RoomFull; // 复用RoomFull错误码表示"不可离开"
             }
 
             // 移除玩家映射
@@ -268,10 +346,21 @@ namespace ET.Server
 
             if (room.Guest != null)
             {
-                var guestAccount = accountComponent.GetAccountByPlayerId(room.Guest.PlayerId);
-                if (guestAccount != null)
+                if (room.Guest.PlayerId == BotPlayerId)
                 {
-                    info.Guest = accountComponent.ToPlayerBrief(guestAccount);
+                    // Bot玩家没有账号记录，手动构造简介
+                    var botBrief = ZBPlayerBrief.Create();
+                    botBrief.PlayerId = BotPlayerId;
+                    botBrief.Nickname = BotNickname;
+                    info.Guest = botBrief;
+                }
+                else
+                {
+                    var guestAccount = accountComponent.GetAccountByPlayerId(room.Guest.PlayerId);
+                    if (guestAccount != null)
+                    {
+                        info.Guest = accountComponent.ToPlayerBrief(guestAccount);
+                    }
                 }
             }
 

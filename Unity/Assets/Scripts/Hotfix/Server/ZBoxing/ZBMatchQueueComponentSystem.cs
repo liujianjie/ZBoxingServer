@@ -112,6 +112,32 @@ namespace ET.Server
 
             Log.Info($"[ZBoxing] Bot已加入房间: RoomId={room.RoomId}, Bot={BotNickname}");
 
+            // 向玩家推送房间更新（Bot已加入）
+            ZBAccountComponent accountComponent = root.GetComponent<ZBAccountComponent>();
+            if (accountComponent != null)
+            {
+                roomManager.BroadcastRoomUpdate(room, accountComponent);
+            }
+
+            // 向玩家推送匹配成功通知（让客户端走标准 MatchFound→InRoom 流程）
+            ZBRoomInfo roomInfo = accountComponent != null
+                ? roomManager.ToRoomInfo(room, accountComponent)
+                : null;
+            // Bot的Guest可能无法通过AccountComponent查到，手动补全
+            if (roomInfo != null && roomInfo.Guest == null)
+            {
+                var botBrief = ZBPlayerBrief.Create();
+                botBrief.PlayerId = BotPlayerId;
+                botBrief.Nickname = BotNickname;
+                roomInfo.Guest = botBrief;
+            }
+            if (roomInfo != null && player.Session != null && !player.Session.IsDisposed)
+            {
+                var matchFound = G2C_ZBMatchFound.Create();
+                matchFound.Room = roomInfo;
+                player.Session.Send(matchFound);
+            }
+
             // 双方都已准备，尝试开战
             bool started = roomManager.TryStartBattle(room);
             if (!started)

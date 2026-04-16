@@ -53,5 +53,10 @@ namespace ET.Server
         /// 房间状态：0=等待, 1=已满, 2=对战中
         /// </summary>
         public int State;
+
+        /// <summary>
+        /// 房间创建时间（服务端毫秒时间戳，用于等待超时Bot注入）
+        /// </summary>
+        public long CreateTime;
     }
 }

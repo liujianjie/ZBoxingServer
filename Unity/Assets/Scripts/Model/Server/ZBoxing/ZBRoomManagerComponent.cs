@@ -7,7 +7,7 @@ namespace ET.Server
     /// 管理所有活跃房间，提供创建/加入/离开/查询功能
     /// </summary>
     [ComponentOf(typeof(Scene))]
-    public class ZBRoomManagerComponent : Entity, IAwake, IDestroy
+    public class ZBRoomManagerComponent : Entity, IAwake, IDestroy, IUpdate
     {
         /// <summary>
         /// 房间ID → 房间Entity的InstanceId
