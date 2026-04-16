@@ -930,6 +930,18 @@ namespace ET.Server
             snapshot.Player2 = self.BuildPlayerState(self.Player2);
 
             self.Broadcast(snapshot);
+
+            // 刷新双方Session活跃时间，防止战斗期间客户端零上行流量时
+            // 被SessionIdleChecker误判超时并断开连接（与BUG-4等待阶段修复保持一致）
+            long clientNow = TimeInfo.Instance.ClientNow();
+            if (self.Player1?.Session != null && !self.Player1.Session.IsDisposed)
+            {
+                self.Player1.Session.LastRecvTime = clientNow;
+            }
+            if (self.Player2?.Session != null && !self.Player2.Session.IsDisposed)
+            {
+                self.Player2.Session.LastRecvTime = clientNow;
+            }
         }
 
         /// <summary>
