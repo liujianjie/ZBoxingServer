@@ -50,6 +50,16 @@ namespace ET.Server
                 return;
             }
 
+            // 刷新队列中所有玩家的Session活跃时间，防止匹配等待中被空闲超时踢掉
+            long clientNow = TimeInfo.Instance.ClientNow();
+            foreach (var p in self.Queue)
+            {
+                if (p.Session != null && !p.Session.IsDisposed)
+                {
+                    p.Session.LastRecvTime = clientNow;
+                }
+            }
+
             ZBMatchPlayer first = self.Queue[0];
             long now = TimeInfo.Instance.ServerNow();
 

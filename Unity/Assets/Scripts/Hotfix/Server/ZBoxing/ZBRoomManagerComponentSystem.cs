@@ -36,6 +36,7 @@ namespace ET.Server
         private static void Update(this ZBRoomManagerComponent self)
         {
             long now = TimeInfo.Instance.ServerNow();
+            long clientNow = TimeInfo.Instance.ClientNow();
 
             // 收集需要注入Bot的房间（避免遍历中修改集合）
             List<ZBRoomComponent> timeoutRooms = null;
@@ -46,6 +47,12 @@ namespace ET.Server
                 if (room.State != ZBRoomState.Waiting) continue;
                 if (room.Guest != null) continue;
                 if (room.CreateTime <= 0) continue;
+
+                // 刷新等待中房主的Session活跃时间，防止等待Bot时被空闲超时踢掉
+                if (room.Host?.Session != null && !room.Host.Session.IsDisposed)
+                {
+                    room.Host.Session.LastRecvTime = clientNow;
+                }
 
                 if (now - room.CreateTime >= RoomWaitTimeoutMs)
                 {
