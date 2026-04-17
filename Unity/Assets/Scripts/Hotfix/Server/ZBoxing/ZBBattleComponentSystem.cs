@@ -79,7 +79,7 @@ namespace ET.Server
         }
 
         /// <summary>
-        /// 战斗结束后直接重置房间状态（内联，不调用ZBRoomManagerComponentSystem避免循环依赖）
+        /// 战斗结束后解散房间并清理玩家映射
         /// </summary>
         private static void ResetRoomAfterBattle(ZBRoomManagerComponent roomManager, int roomId, Scene root)
         {
@@ -91,15 +91,25 @@ namespace ET.Server
             ZBRoomComponent room = roomManager.GetChild<ZBRoomComponent>(instanceId);
             if (room == null)
             {
+                roomManager.RoomIdToInstanceId.Remove(roomId);
                 return;
             }
 
-            // 重置房间状态和准备状态
-            room.State = ZBRoomState.Full;
-            if (room.Host != null) room.Host.IsReady = false;
-            if (room.Guest != null) room.Guest.IsReady = false;
+            // 清理双方玩家的房间映射
+            if (room.Host != null)
+            {
+                roomManager.PlayerToRoomId.Remove(room.Host.PlayerId);
+            }
+            if (room.Guest != null && room.Guest.PlayerId != -1)
+            {
+                roomManager.PlayerToRoomId.Remove(room.Guest.PlayerId);
+            }
 
-            Log.Info($"[ZBoxing] 房间战后重置: RoomId={roomId}, State=Full");
+            // 解散房间
+            roomManager.RoomIdToInstanceId.Remove(roomId);
+            room.Dispose();
+
+            Log.Info($"[ZBoxing] 战后解散房间: RoomId={roomId}");
         }
 
         /// <summary>

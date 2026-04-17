@@ -45,6 +45,20 @@ namespace ET.Server
             if (roomManager != null)
             {
                 roomManager.OnPlayerDisconnect(playerId, accountComponent);
+
+                // 防御性清理：确保PlayerToRoomId无残留
+                if (roomManager.PlayerToRoomId.ContainsKey(playerId))
+                {
+                    Log.Warning($"[ZBoxing] 断线后PlayerToRoomId残留，强制移除: PlayerId={playerId}");
+                    roomManager.PlayerToRoomId.Remove(playerId);
+                }
+            }
+
+            // 防御性清理：确保PlayerToBattleId无残留
+            if (battleComponent != null && battleComponent.PlayerToBattleId.ContainsKey(playerId))
+            {
+                Log.Warning($"[ZBoxing] 断线后PlayerToBattleId残留，强制移除: PlayerId={playerId}");
+                battleComponent.PlayerToBattleId.Remove(playerId);
             }
 
             // 匹配队列断线处理

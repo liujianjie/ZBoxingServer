@@ -217,13 +217,7 @@ namespace ET.Server
                 return ZBErrorCode.RoomNotFound;
             }
 
-            // 对战中不允许离开房间
-            if (room.State == ZBRoomState.Fighting)
-            {
-                return ZBErrorCode.RoomFull; // 复用RoomFull错误码表示"不可离开"
-            }
-
-            // 移除玩家映射
+            // 移除玩家映射（对战中也允许离开，战斗Entity自包含不依赖房间）
             self.PlayerToRoomId.Remove(playerId);
 
             if (room.Host != null && room.Host.PlayerId == playerId)
