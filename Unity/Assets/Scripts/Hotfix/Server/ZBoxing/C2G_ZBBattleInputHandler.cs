@@ -6,6 +6,7 @@ namespace ET.Server
     /// 单向消息（ISessionMessage），无需响应
     /// </summary>
     [MessageSessionHandler(SceneType.Gate)]
+    [FriendOf(typeof(ZBBattleRoom))]
     public class C2G_ZBBattleInputHandler : MessageSessionHandler<C2G_ZBBattleInput>
     {
         protected override async ETTask Run(Session session, C2G_ZBBattleInput message)

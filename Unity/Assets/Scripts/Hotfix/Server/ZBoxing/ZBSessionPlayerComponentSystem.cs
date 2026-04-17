@@ -3,6 +3,8 @@ namespace ET.Server
     [EntitySystemOf(typeof(ZBSessionPlayerComponent))]
     [FriendOf(typeof(ZBSessionPlayerComponent))]
     [FriendOf(typeof(ZBAccountComponent))]
+    [FriendOf(typeof(ZBRoomManagerComponent))]
+    [FriendOf(typeof(ZBBattleComponent))]
     public static partial class ZBSessionPlayerComponentSystem
     {
         [EntitySystem]
