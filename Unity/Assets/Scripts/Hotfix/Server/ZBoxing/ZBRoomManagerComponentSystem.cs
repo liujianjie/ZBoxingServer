@@ -25,7 +25,7 @@ namespace ET.Server
         }
 
         // 等待超时阈值（毫秒）—— 创建房间后30秒无人加入则注入Bot
-        private const long RoomWaitTimeoutMs = 30000;
+        private const long RoomWaitTimeoutMs = 5000;
         private const long BotPlayerId = -1;
         private const string BotNickname = "AI Bot";
 

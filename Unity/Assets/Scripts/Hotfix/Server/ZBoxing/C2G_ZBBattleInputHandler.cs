@@ -37,6 +37,8 @@ namespace ET.Server
             // 4. 只在战斗阶段接受输入（倒计时和已结束时忽略）
             if (!battle.IsAcceptingInput())
             {
+                if (battle.CurrentFrame % 30 == 0)
+                    Log.Debug($"[ZBInput] 拒绝输入: Phase={battle.Phase}, Frame={battle.CurrentFrame}");
                 return;
             }
 
@@ -66,16 +68,16 @@ namespace ET.Server
             }
 
             // 8. 帧号合理性验证
-            //    客户端帧号不能超过服务端太多（防止预测作弊）
-            //    也不能落后太多（过期输入没意义）
             if (!battle.IsFrameInTolerance(message.Frame))
             {
+                Log.Warning($"[ZBInput] 帧号超差: clientFrame={message.Frame}, serverFrame={battle.CurrentFrame}, diff={message.Frame - battle.CurrentFrame}");
                 return;
             }
 
             // 9. 缓冲区上限防DoS
             if (battlePlayer.InputBuffer.Count >= ZBBattleConst.InputBufferMax)
             {
+                Log.Warning($"[ZBInput] 缓冲区满: player={playerId}, count={battlePlayer.InputBuffer.Count}");
                 return;
             }
 
@@ -86,6 +88,11 @@ namespace ET.Server
                 MoveDir = moveDir,
                 Action = action,
             });
+
+            if (moveDir != 0 || action != 0)
+            {
+                Log.Debug($"[ZBInput] 入队OK: player={playerId}, frame={message.Frame}, move={moveDir}, action={action}, bufSize={battlePlayer.InputBuffer.Count}");
+            }
 
             await ETTask.CompletedTask;
         }

@@ -7,7 +7,7 @@ namespace ET.Server
     public static partial class ZBMatchQueueComponentSystem
     {
         // 匹配超时阈值（毫秒）
-        private const long MatchTimeoutMs = 30000;
+        private const long MatchTimeoutMs = 5000;
 
         // Bot虚拟PlayerId
         private const long BotPlayerId = -1;
